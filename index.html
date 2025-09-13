@@ -11,7 +11,6 @@
     button { padding: 10px 20px; cursor: pointer; }
     #hud { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 8px; }
     #eventBox { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); padding: 15px; border-radius: 10px; display: none; }
-    canvas { display: block; }
   </style>
 </head>
 <body>
@@ -40,16 +39,14 @@
     <canvas id="gameCanvas"></canvas>
   </div>
 
-  <!-- Three.js -->
-  <script src="https://cdn.jsdelivr.net/npm/three@0.150.0/build/three.min.js"></script>
+  <!-- Firebase & Three.js -->
+  <script type="module">
+    import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.150.0/build/three.module.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-
-  <script>
-    // 🔥 Firebase Config
+    // Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyDdkE1j3ClDiNwZLobg09MRpH-vGLQJv-s",
       authDomain: "eywallahsimulator.firebaseapp.com",
@@ -60,20 +57,30 @@
       measurementId: "G-86GQX5G1S3"
     };
 
-    // Başlat
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
 
     let currentUser = null;
     let gameData = { money: 500, age: 15, stress: 20 };
 
-    // Login/Register
+    // Auth listener (sayfa yenilenince otomatik login)
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        currentUser = user;
+        await loadGameData();
+        startGame();
+      } else {
+        document.getElementById("loginScreen").style.display = "flex";
+        document.getElementById("gameScreen").style.display = "none";
+      }
+    });
+
     async function login() {
       const email = document.getElementById("email").value;
       const pass = document.getElementById("password").value;
       try {
-        const user = await auth.signInWithEmailAndPassword(email, pass);
+        const user = await signInWithEmailAndPassword(auth, email, pass);
         currentUser = user.user;
         await loadGameData();
         startGame();
@@ -86,7 +93,7 @@
       const email = document.getElementById("email").value;
       const pass = document.getElementById("password").value;
       try {
-        const user = await auth.createUserWithEmailAndPassword(email, pass);
+        const user = await createUserWithEmailAndPassword(auth, email, pass);
         currentUser = user.user;
         await saveGameData();
         startGame();
@@ -97,15 +104,14 @@
 
     async function saveGameData() {
       if (!currentUser) return;
-      await db.collection("users").doc(currentUser.uid).set(gameData);
+      await setDoc(doc(db, "users", currentUser.uid), gameData);
     }
 
     async function loadGameData() {
       if (!currentUser) return;
-      const snap = await db.collection("users").doc(currentUser.uid).get();
-      if (snap.exists) {
-        gameData = snap.data();
-      }
+      const ref = doc(db, "users", currentUser.uid);
+      const snap = await getDoc(ref);
+      if (snap.exists()) gameData = snap.data();
     }
 
     function startGame() {
@@ -144,7 +150,7 @@
       updateHUD();
     }
 
-    // Three.js Harita
+    // Three.js Basit Şehir
     function initScene() {
       const canvas = document.getElementById("gameCanvas");
       const scene = new THREE.Scene();
@@ -164,8 +170,7 @@
         scene.add(cube);
       }
 
-      camera.position.z = 15;
-      camera.position.y = 10;
+      camera.position.set(10, 10, 15);
       camera.lookAt(0,0,0);
 
       function animate() {

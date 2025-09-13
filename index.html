@@ -11,6 +11,7 @@
     button { padding: 10px 20px; cursor: pointer; }
     #hud { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 8px; }
     #eventBox { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); padding: 15px; border-radius: 10px; display: none; }
+    canvas { display: block; }
   </style>
 </head>
 <body>
@@ -39,13 +40,15 @@
     <canvas id="gameCanvas"></canvas>
   </div>
 
-  <!-- Firebase & Three.js -->
-  <script type="module">
-    import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.150.0/build/three.module.js";
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  <!-- Three.js -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.150.0/build/three.min.js"></script>
 
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+  <script>
     // 🔥 Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyDdkE1j3ClDiNwZLobg09MRpH-vGLQJv-s",
@@ -58,11 +61,10 @@
     };
 
     // Başlat
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
 
-    // Global game state
     let currentUser = null;
     let gameData = { money: 500, age: 15, stress: 20 };
 
@@ -71,7 +73,7 @@
       const email = document.getElementById("email").value;
       const pass = document.getElementById("password").value;
       try {
-        const user = await signInWithEmailAndPassword(auth, email, pass);
+        const user = await auth.signInWithEmailAndPassword(email, pass);
         currentUser = user.user;
         await loadGameData();
         startGame();
@@ -84,7 +86,7 @@
       const email = document.getElementById("email").value;
       const pass = document.getElementById("password").value;
       try {
-        const user = await createUserWithEmailAndPassword(auth, email, pass);
+        const user = await auth.createUserWithEmailAndPassword(email, pass);
         currentUser = user.user;
         await saveGameData();
         startGame();
@@ -93,28 +95,25 @@
       }
     }
 
-    // Firestore
     async function saveGameData() {
       if (!currentUser) return;
-      await setDoc(doc(db, "users", currentUser.uid), gameData);
+      await db.collection("users").doc(currentUser.uid).set(gameData);
     }
 
     async function loadGameData() {
       if (!currentUser) return;
-      const ref = doc(db, "users", currentUser.uid);
-      const snap = await getDoc(ref);
-      if (snap.exists()) {
+      const snap = await db.collection("users").doc(currentUser.uid).get();
+      if (snap.exists) {
         gameData = snap.data();
       }
     }
 
-    // Başlatma
     function startGame() {
       document.getElementById("loginScreen").style.display = "none";
       document.getElementById("gameScreen").style.display = "block";
       updateHUD();
       initScene();
-      setInterval(randomEvent, 15000); // her 15sn random event
+      setInterval(randomEvent, 15000);
     }
 
     function updateHUD() {
@@ -124,7 +123,6 @@
       saveGameData();
     }
 
-    // Random Events
     function randomEvent() {
       let events = [
         { text: "Arkadaşın sinemaya çağırdı", opt1: "Git (Mutluluk +)", opt2: "Gitme (Stres -)" },
@@ -132,7 +130,7 @@
         { text: "Ev fiyatları arttı, satacak mısın?", opt1: "Sat (Para +)", opt2: "Bekle (Risk)" }
       ];
       let e = events[Math.floor(Math.random() * events.length)];
-      if (e.text.includes("Kumar") && gameData.age < 20) return; // yaş kontrol
+      if (e.text.includes("Kumar") && gameData.age < 20) return;
       document.getElementById("eventBox").style.display = "block";
       document.getElementById("eventText").innerText = e.text;
       document.querySelectorAll("#eventBox button")[0].innerText = e.opt1;
@@ -140,11 +138,8 @@
     }
 
     function chooseOption(opt) {
-      if (opt === 1) {
-        gameData.money += 100; // test amaçlı
-      } else {
-        gameData.stress -= 5;
-      }
+      if (opt === 1) gameData.money += 100;
+      else gameData.stress -= 5;
       document.getElementById("eventBox").style.display = "none";
       updateHUD();
     }
@@ -157,12 +152,10 @@
       const renderer = new THREE.WebGLRenderer({ canvas });
       renderer.setSize(window.innerWidth, window.innerHeight);
 
-      // Işık
       const light = new THREE.DirectionalLight(0xffffff, 1);
       light.position.set(5, 10, 5).normalize();
       scene.add(light);
 
-      // Basit şehir küpleri
       for (let i = 0; i < 20; i++) {
         let geometry = new THREE.BoxGeometry(1, Math.random()*3+1, 1);
         let material = new THREE.MeshStandardMaterial({ color: Math.random()*0xffffff });

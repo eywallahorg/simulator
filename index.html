@@ -1,189 +1,619 @@
 <!doctype html>
-<html>
+<html lang="tr">
 <head>
-  <meta charset="utf-8" />
-  <title>Eywallah Sim - Prototip</title>
-  <style>
-    :root{--bg:#0f1720;--card:#111827;--accent:#00e68a;--muted:#93a3b1;color-scheme:dark}
-    body{background:var(--bg);color:#e6eef4;font-family:Inter,Segoe UI,Arial;margin:0;padding:16px}
-    .row{display:flex;gap:12px}
-    .card{background:var(--card);padding:12px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,0.6)}
-    .stats{min-width:220px}
-    .bar{height:10px;background:#1f2937;border-radius:6px;margin-top:6px;overflow:hidden}
-    .bar > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#14b07a)}
-    button{background:transparent;color:var(--accent);border:1px solid #20303a;padding:8px 10px;border-radius:8px;cursor:pointer}
-    .market{width:380px}
-    .item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #0f2a22}
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Eywallah Sim — Prototip</title>
+<style>
+  :root{
+    --bg:#071018; --card:#0b1220; --muted:#7d8b97; --accent:#00e68a;
+    --glass: rgba(255,255,255,0.03);
+    color-scheme: dark;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    background: linear-gradient(180deg,#03060a 0%, #071018 60%);
+    color:#e6eef4; padding:18px;
+  }
+  .wrap{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:320px 1fr 320px;gap:16px}
+  header{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  h1{font-size:20px;margin:0}
+  .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius:12px;padding:14px;box-shadow:0 8px 30px rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.03)}
+  .stat-row{display:flex;gap:8px;flex-direction:column}
+  .bar{height:12px;background:#08131a;border-radius:8px;overflow:hidden;position:relative}
+  .bar > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#14b07a)}
+  .small{font-size:13px;color:var(--muted)}
+  button{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px 10px;border-radius:8px;color:var(--accent);cursor:pointer}
+  .btn-primary{background:linear-gradient(90deg,var(--accent),#14b07a);color:#032; border:none}
+  .menu{display:flex;gap:6px}
+  .center{display:flex;flex-direction:column;gap:12px}
+  .actions{display:flex;flex-wrap:wrap;gap:8px}
+  .market-list .item{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed rgba(255,255,255,0.02)}
+  .inv-list div{padding:6px 0}
+  .log{height:220px;overflow:auto;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02));padding:8px;border-radius:8px;font-size:13px}
+  .topinfo{display:flex;gap:12px;align-items:center}
+  .kpi{padding:8px 12px;border-radius:10px;background:var(--glass);font-size:13px}
+  .modal{position:fixed;inset:0;background:rgba(2,6,10,0.66);display:flex;align-items:center;justify-content:center;z-index:40}
+  .box{width:720px;max-width:95%;background:#071628;border-radius:12px;padding:16px;border:1px solid rgba(255,255,255,0.04)}
+  .row{display:flex;gap:12px}
+  .col{flex:1}
+  .quiz-choices{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+  input,select{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px;border-radius:8px;color:inherit}
+  footer{grid-column:1/-1;text-align:center;color:var(--muted);margin-top:14px;font-size:13px}
+  @media(max-width:980px){
+    .wrap{grid-template-columns:1fr; padding-bottom:50px}
+    header{flex-direction:column;align-items:flex-start;gap:10px}
+  }
+</style>
 </head>
 <body>
-  <h1>Eywallah Sim — Prototip</h1>
-
-  <div class="row">
-    <div class="card stats">
-      <strong>Karakter</strong>
-      <div id="name">İsim: -</div>
-      <div id="age">Yaş: -</div>
-      <div id="day">Gün: 0</div>
-
-      <div style="margin-top:8px"><strong>Para:</strong> $<span id="money">0</span></div>
-      <div style="margin-top:8px"><strong>Sağlık</strong>
-        <div class="bar"><i id="healthBar" style="width:60%"></i></div>
-      </div>
-      <div style="margin-top:8px"><strong>Stres</strong>
-        <div class="bar"><i id="stressBar" style="width:30%"></i></div>
-      </div>
-
-      <div style="margin-top:12px">
-        <button id="tickBtn">Gün Geçir</button>
-        <button id="saveBtn">Kaydet</button>
-        <button id="loadBtn">Yükle</button>
-      </div>
-    </div>
-
-    <div class="card market">
-      <strong>Piyasa</strong>
-      <div id="marketList"></div>
-      <hr />
-      <strong>Envanter</strong>
-      <div id="inventory"></div>
-    </div>
+<header>
+  <div>
+    <h1>Eywallah Sim — Gerçekçi Okul & Hayat Simülatörü (Prototip)</h1>
+    <div class="small">Prototip: okul, piyasa, sosyal, olaylar, quiz — kaydetme localStorage</div>
   </div>
+  <div class="menu">
+    <div class="kpi">Gün: <span id="ui-day">1</span></div>
+    <div class="kpi">Yaş: <span id="ui-age">16</span></div>
+    <div class="kpi">Para: ₺<span id="ui-money">0</span></div>
+    <button id="btn-save">Kaydet</button>
+    <button id="btn-load">Yükle</button>
+    <button id="btn-reset">Reset </button>
+  </div>
+</header>
 
-  <script>
-    // --- Başlangıç verisi ---
-    const defaultState = {
-      name: "Eywallah",
-      age: 18,
-      day: 1,
-      money: 300,
-      health: 80,
-      stress: 10,
-      inventory: {},
-      market: [
-        {id:"bread", name:"Ekmek", price:5, volatility:0.08, minPrice:1},
-        {id:"phone", name:"Telefon", price:400, volatility:0.06, minPrice:50},
-        {id:"laptop", name:"Laptop", price:900, volatility:0.04, minPrice:200},
-        {id:"stockA", name:"Hisse A", price:120, volatility:0.12, minPrice:10},
-        {id:"tokenX", name:"Token X", price:10, volatility:0.35, minPrice:1}
-      ]
+<div class="wrap">
+  <!-- SOL -->
+  <aside class="card">
+    <strong>Karakter</strong>
+    <div style="margin-top:8px" id="ui-name">İsim: -</div>
+    <div class="small" style="margin-top:6px">Aile durumu: <span id="ui-family">-</span></div>
+    <hr style="margin:10px 0;border:none;border-top:1px solid rgba(255,255,255,0.03)">
+    <div><strong>Statlar</strong></div>
+    <div style="margin-top:8px" class="stat-row">
+      <div class="small">Sağlık <span id="v-health-val">80</span>%</div>
+      <div class="bar"><i id="v-health" style="width:80%"></i></div>
+
+      <div class="small">Enerji <span id="v-energy-val">80</span>%</div>
+      <div class="bar"><i id="v-energy" style="width:80%"></i></div>
+
+      <div class="small">Stres <span id="v-stress-val">10</span>%</div>
+      <div class="bar"><i id="v-stress" style="width:10%"></i></div>
+
+      <div class="small">Not Ortalaması <span id="v-gpa-val">2.5</span></div>
+      <div class="bar"><i id="v-gpa" style="width:50%"></i></div>
+    </div>
+
+    <hr style="margin:10px 0;border:none;border-top:1px solid rgba(255,255,255,0.03)">
+    <div class="small">Hızlı eylemler</div>
+    <div style="margin-top:8px" class="actions">
+      <button onclick="doAction('study')">Ders çalış (2 saat)</button>
+      <button onclick="doAction('rest')">Dinlen (4 saat)</button>
+      <button onclick="doAction('social')">Arkadaşlarla takıl</button>
+      <button onclick="doAction('parttime')">Part-time iş</button>
+    </div>
+
+    <hr style="margin:10px 0;border:none;border-top:1px solid rgba(255,255,255,0.03)">
+    <div class="small">Eşyalar</div>
+    <div class="inv-list" id="inv"></div>
+  </aside>
+
+  <!-- ORTA -->
+  <main class="card center">
+    <div class="row" style="align-items:center">
+      <div class="col">
+        <strong>Okul / Günlük</strong>
+        <div class="small" id="ui-school-level">Lise (10. Sınıf)</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn-primary" id="btn-next-day">Gün Geçir (1 Gün)</button>
+      </div>
+    </div>
+
+    <section style="margin-top:8px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div class="card" style="flex:1;min-width:250px">
+          <strong>Okul</strong>
+          <div class="small" style="margin-top:6px">Ders: <span id="ui-current-subject">Matematik</span></div>
+          <div style="margin-top:8px">
+            <button onclick="openSchool()">Sınıfa Gir (Quiz)</button>
+            <button onclick="openHomework()" style="margin-left:8px">Ödev Yap</button>
+          </div>
+        </div>
+
+        <div class="card" style="flex:1;min-width:250px">
+          <strong>Piyasa</strong>
+          <div class="small" style="margin-top:6px">Hızlı al/sat & yatırım</div>
+          <div style="margin-top:8px" id="market"></div>
+        </div>
+
+        <div class="card" style="flex:1;min-width:250px">
+          <strong>Sosyal & Aile</strong>
+          <div class="small" style="margin-top:6px">İlişkiler & aile desteği</div>
+          <div style="margin-top:8px">
+            <button onclick="meetFamily()">Aileyle vakit geçir</button>
+            <button onclick="meetFriend()" style="margin-left:8px">Arkadaşla takıl</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section style="margin-top:12px">
+      <strong>Oyun Günlüğü</strong>
+      <div class="log" id="log"></div>
+    </section>
+  </main>
+
+  <!-- SAĞ -->
+  <aside class="card">
+    <strong>Hızlı Bilgiler</strong>
+    <div style="margin-top:8px" class="small">Seçilen şehir: <span id="ui-city">Bolu</span></div>
+    <div style="margin-top:8px" class="small">Zorluk: <span id="ui-difficulty">Orta</span></div>
+
+    <hr style="margin:10px 0;border:none;border-top:1px solid rgba(255,255,255,0.03)">
+
+    <div><strong>İlerlemeni izle</strong></div>
+    <div style="margin-top:8px">
+      <div class="small">İş geçmişi</div>
+      <div id="job-history" class="small" style="margin-top:6px;color:var(--muted)"></div>
+    </div>
+
+    <hr style="margin:10px 0;border:none;border-top:1px solid rgba(255,255,255,0.03)">
+
+    <div><strong>Kayıt</strong></div>
+    <div style="margin-top:8px" class="small">Oyun otomatik kaydedilir. İstersen elle kaydet.</div>
+  </aside>
+</div>
+
+<!-- MODALS -->
+<div id="modal-root" style="display:none"></div>
+
+<footer>Eywallah Sim • Prototip • Kod: ChatGPT (kk) — daha fazlası için iste :)</footer>
+
+<script>
+/*
+  Eywallah Sim — single-file prototype
+  - realistic school quizzes
+  - market with random-walk prices
+  - events with choices
+  - actions: study, rest, social, parttime
+  - save/load with localStorage
+*/
+
+/* ---------- GAME STATE ---------- */
+const defaultState = {
+  player: {
+    name: "Eywallah",
+    age: 16,
+    city: "Bolu",
+    family: "Orta",
+    money: 800,
+    health: 90,
+    energy: 80,
+    stress: 15,
+    gpa: 2.5, // 0-4
+    inventory: {},
+    jobs: [],
+  },
+  day: 1,
+  school: { level: "Lise", gradeYear: 10, currentSubject: "Matematik" },
+  market: [
+    { id:"bread", name:"Ekmek", price:5, vol:0.06, min:1 },
+    { id:"phone", name:"Telefon", price:420, vol:0.05, min:50 },
+    { id:"stockA", name:"Hisse A", price:120, vol:0.12, min:8 },
+    { id:"tokenX", name:"Token X", price:8, vol:0.30, min:1 }
+  ],
+  eventHistory: [],
+  settings: { autosave:true }
+};
+
+let state = loadGame() || JSON.parse(JSON.stringify(defaultState));
+let ui = {}
+
+/* ---------- UTILS ---------- */
+function rand(min=0,max=1){ return Math.random()*(max-min)+min }
+function randInt(a,b){ return Math.floor(rand(a,b+1)) }
+function clamp(v,min,max){ return Math.max(min,Math.min(max,v)) }
+function log(msg){
+  const div = document.getElementById('log');
+  const ts = `Gün ${state.day}`;
+  const el = document.createElement('div'); el.textContent = `[${ts}] ${msg}`;
+  div.prepend(el);
+  // keep only recent 200
+  while(div.children.length>200) div.removeChild(div.lastChild);
+}
+
+/* ---------- RENDER ---------- */
+function renderAll(){
+  document.getElementById('ui-day').textContent = state.day;
+  document.getElementById('ui-age').textContent = state.player.age;
+  document.getElementById('ui-money').textContent = Math.round(state.player.money);
+  document.getElementById('ui-name').textContent = `İsim: ${state.player.name}`;
+  document.getElementById('ui-family').textContent = state.player.family;
+  document.getElementById('v-health-val').textContent = Math.round(state.player.health);
+  document.getElementById('v-energy-val').textContent = Math.round(state.player.energy);
+  document.getElementById('v-stress-val').textContent = Math.round(state.player.stress);
+  document.getElementById('v-gpa-val').textContent = (Math.round(state.player.gpa*100)/100).toFixed(2);
+
+  document.getElementById('v-health').style.width = clamp(state.player.health,0,100) + "%";
+  document.getElementById('v-energy').style.width = clamp(state.player.energy,0,100) + "%";
+  document.getElementById('v-stress').style.width = clamp(state.player.stress,0,100) + "%";
+  // map gpa 0-4 to 0-100
+  document.getElementById('v-gpa').style.width = (state.player.gpa/4*100) + "%";
+
+  document.getElementById('ui-school-level').textContent = `${state.school.level} (${state.school.gradeYear}. Sınıf)`;
+  document.getElementById('ui-current-subject').textContent = state.school.currentSubject;
+  document.getElementById('ui-city').textContent = state.player.city;
+  document.getElementById('ui-difficulty').textContent = state.player.family;
+  // inventory
+  const inv = document.getElementById('inv'); inv.innerHTML = "";
+  const keys = Object.keys(state.player.inventory);
+  if(keys.length===0) inv.textContent = "Boş";
+  else keys.forEach(k=>{ const d = document.createElement('div'); d.textContent = `${k} x ${state.player.inventory[k]}`; inv.appendChild(d) });
+  // market
+  renderMarket();
+  // job history
+  document.getElementById('job-history').innerHTML = state.player.jobs.slice(-5).reverse().map(j=>`• ${j}`).join("<br>") || "Yok";
+}
+
+function renderMarket(){
+  const container = document.getElementById('market'); container.innerHTML = "";
+  state.market.forEach(it=>{
+    const div = document.createElement('div'); div.className='item';
+    div.innerHTML = `<div><strong>${it.name}</strong><div class="small">₺${it.price.toFixed(2)}</div></div>
+      <div>
+        <button onclick="buyMarket('${it.id}')">Al</button>
+        <button onclick="sellMarket('${it.id}')">Sat</button>
+      </div>`;
+    container.appendChild(div);
+  });
+}
+
+/* ---------- GAME LOGIC ---------- */
+
+// market price random-walk
+function updateMarket(){
+  state.market.forEach(it=>{
+    const change = (Math.random() - 0.48) * it.vol * 2; // slight bias
+    let newPrice = it.price * (1 + change);
+    // occasionally news shocks
+    if(Math.random() < 0.01) newPrice *= (1 + rand(-0.35,0.35));
+    if(newPrice < it.min) newPrice = it.min + rand(0, it.min*0.2);
+    it.price = Math.round(newPrice*100)/100;
+  });
+}
+
+// actions (study/rest/social/parttime)
+function doAction(type){
+  switch(type){
+    case 'study':
+      if(state.player.energy < 10){ log("Enerjin düşük, önce dinlen."); return }
+      state.player.energy -= 8;
+      state.player.stress += 5;
+      // başarı şansı not ortalamasına bağlı
+      const gain = rand(0.02, 0.12) * (1 + (4-state.player.gpa)/4);
+      state.player.gpa = clamp(state.player.gpa + gain, 0, 4);
+      log("Ders çalıştın. Not ortalaman arttı.");
+      break;
+    case 'rest':
+      state.player.energy = clamp(state.player.energy + 30,0,100);
+      state.player.stress = clamp(state.player.stress - 20,0,100);
+      state.player.health = clamp(state.player.health + 5,0,100);
+      log("İyi bir uyku çekip dinlendin.");
+      break;
+    case 'social':
+      state.player.energy = clamp(state.player.energy - 12,0,100);
+      state.player.stress = clamp(state.player.stress - 12,0,100);
+      // küçük para harcaması
+      const spend = Math.min(state.player.money, randInt(5,30));
+      state.player.money -= spend;
+      log(`Arkadaşlarla vakit geçirdin. Harcandı: ₺${Math.round(spend)}`);
+      break;
+    case 'parttime':
+      if(state.player.energy < 6){ log("Enerjin az, işe gitmeden önce dinlen."); return }
+      state.player.energy = clamp(state.player.energy - 10,0,100);
+      state.player.stress = clamp(state.player.stress + 6,0,100);
+      const earn = randInt(40,120);
+      state.player.money += earn;
+      state.player.jobs.push(`Part-time: ₺${Math.round(earn)} (Gün ${state.day})`);
+      log(`Part-time işten ₺${Math.round(earn)} kazandın.`);
+      break;
+  }
+  autosave();
+  renderAll();
+}
+
+/* ---------- MARKET ---------- */
+function buyMarket(id){
+  const item = state.market.find(x=>x.id===id);
+  if(!item) return;
+  if(state.player.money < item.price){ log("Paran yetmiyor."); return }
+  state.player.money -= item.price;
+  state.player.inventory[item.name] = (state.player.inventory[item.name]||0)+1;
+  log(`${item.name} satın alındı: ₺${item.price.toFixed(2)}`);
+  autosave(); renderAll();
+}
+function sellMarket(id){
+  const item = state.market.find(x=>x.id===id);
+  if(!item) return;
+  if(!state.player.inventory[item.name] || state.player.inventory[item.name] <= 0){ log("Envanterinde yok."); return }
+  const sellPrice = item.price * 0.9;
+  state.player.inventory[item.name] -= 1;
+  state.player.money += sellPrice;
+  log(`${item.name} satıldı: ₺${sellPrice.toFixed(2)} (komisyon %10)`);
+  autosave(); renderAll();
+}
+
+/* ---------- DAY TICK & DAILY EVENTS ---------- */
+function nextDay(){
+  state.day += 1;
+  // age each 365 days
+  if(state.day % 365 === 0) state.player.age += 1;
+  // passive energy/health adjustments
+  state.player.energy = clamp(state.player.energy - rand(3,8),0,100);
+  state.player.health = clamp(state.player.health - rand(0,1),0,100);
+  // passive income for some families
+  if(state.player.family === "Zengin"){ state.player.money += 25 }
+  if(state.player.family === "Orta"){ state.player.money += 5 }
+  if(state.player.family === "Fakir"){ state.player.money += 0 }
+
+  // market updates
+  updateMarket();
+
+  // random event chance increases with stress & low money
+  const eventChance = 0.25 + (state.player.stress/200) + (state.player.money < 200 ? 0.12 : 0);
+  if(Math.random() < eventChance) triggerEvent();
+
+  // schooling: weekly test once per 7 days
+  if(state.day % 7 === 0){
+    weeklyTest();
+  }
+
+  // small friction
+  state.player.stress = clamp(state.player.stress + rand(-1,2), 0,100);
+
+  // autosave + render
+  autosave(); renderAll();
+  log("Yeni gün başladı.");
+}
+
+/* ---------- EVENTS ---------- */
+const EVENTS = [
+  {
+    id:"exam_week",
+    title:"Sınav Haftası Yaklaşıyor",
+    desc:"Bu hafta büyük bir sınav var. Çalışmayı mı yoksa arkadaşlarla vakit geçirmeyi mi seçiyorsun?",
+    choices:[
+      { txt:"Çalış (gpa artar, stres artar)", do(){ state.player.gpa = clamp(state.player.gpa + rand(0.05,0.18),0,4); state.player.stress = clamp(state.player.stress + 12,0,100); log("Sınava çalıştın, notların iyileşti."); } },
+      { txt:"Eğlen (stres azalır, gpa düşer)", do(){ state.player.stress = clamp(state.player.stress - 15,0,100); state.player.gpa = clamp(state.player.gpa - rand(0.02,0.08),0,4); log("Eğlencenin tadını çıkardın ama notlar biraz düştü."); } }
+    ]
+  },
+  {
+    id:"phone_broke",
+    title:"Telefonun Bozuldu",
+    desc:"Telefonun aniden bozuldu. Tamir ettirmek ya da eskisiyle idare etmek seçenekleri var.",
+    choices:[
+      { txt:"Tamir et (paran azalır ama stres düşer)", do(){ const cost=randInt(120,260); state.player.money -= cost; state.player.stress = clamp(state.player.stress - 18,0,100); log(`Telefon tamiri yapıldı (₺${cost}).`); } },
+      { txt:"Eskiyle devam et (stres artar)", do(){ state.player.stress = clamp(state.player.stress + 12,0,100); log("Eski telefonla idare ettin, biraz sinirlisin."); } }
+    ]
+  },
+  {
+    id:"family_help",
+    title:"Aile Sana Yardım Teklif Ediyor",
+    desc:"Ailen acayip bir destek sunuyor mu? Kabul edersen para alırsın ama şerefin etkilenmez :)",
+    choices:[
+      { txt:"Kabul et (küçük para)", do(){ const amt = state.player.family === "Fakir" ? randInt(200,400) : randInt(60,160); state.player.money += amt; log(`Aileden yardım geldi: ₺${amt}`); } },
+      { txt:"Kabul etme (stresin azalır)", do(){ state.player.stress = clamp(state.player.stress - 6,0,100); log("Kendi ayakların üzerinde durmayı tercih ettin. ♥"); } }
+    ]
+  },
+  {
+    id:"crypto_crash",
+    title:"Token Piyasasında Çöküş",
+    desc:"Token X büyük değer kaybetti. Hemen satmalı mısın?",
+    choices:[
+      { txt:"Sat (zararı sabitle)", do(){ const t = state.market.find(x=>x.id==='tokenX'); if(!t) return; const count = state.player.inventory[t.name]||0; if(count>0){ const earn = Math.round(count * t.price * 0.8); state.player.money += earn; state.player.inventory[t.name]=0; log(`Token X satıldı: ₺${earn}`); } else log("Tokenin yok."); } },
+      { txt:"Bekle (risk devam ediyor)", do(){ // nothing immediate
+          log("Beklemeyi seçtin — risk devam ediyor."); } }
+    ]
+  }
+];
+
+function triggerEvent(){
+  const e = EVENTS[Math.floor(Math.random()*EVENTS.length)];
+  openModalEvent(e);
+  state.eventHistory.push({id:e.id, day:state.day});
+}
+
+/* ---------- SCHOOL: QUIZ / WEEKLY TEST ---------- */
+const QUIZ_BANK = {
+  Matematik: [
+    {q:"5+7 kaç eder?", a:["10","11","12","13"], correct:2},
+    {q:"12*3 kaçtır?", a:["36","32","30","42"], correct:0},
+    {q:"9-4 = ?", a:["3","4","5","6"], correct:2}
+  ],
+  Fen: [
+    {q:"Dünyanın uydusu hangisidir?", a:["Güneş","Ay","Mars","Venüs"], correct:1},
+    {q:"Suyun kaynama noktası kaç °C?", a:["50","100","90","120"], correct:1},
+    {q:"Fotosentez için gerekli gaz?", a:["Oksijen","Azot","Karbon Dioksit","Helyum"], correct:2}
+  ],
+  Turkce: [
+    {q:"'Güzel' kelimesinin zıt anlamlısı hangisidir?", a:["Çirkin","Kötü","Dar","Yavaş"], correct:0},
+    {q:"'Kitap' sözcüğü hangi türden?", a:["İsim","Fiil","Sıfat","Zamir"], correct:0}
+  ]
+};
+
+function openSchool(){
+  const subject = state.school.currentSubject || "Matematik";
+  const bank = QUIZ_BANK[subject] || QUIZ_BANK['Matematik'];
+  const q = bank[Math.floor(Math.random()*bank.length)];
+  openModalQuiz(subject, q);
+}
+
+function weeklyTest(){
+  // kısa sınav: 3 soru, sonuç gpa etkiler
+  const subjects = Object.keys(QUIZ_BANK);
+  const chosen = subjects[Math.floor(Math.random()*subjects.length)];
+  const questions = QUIZ_BANK[chosen];
+  openModalWeeklyTest(chosen, questions);
+}
+
+/* ---------- MODAL UI ---------- */
+function openModalEvent(e){
+  const root = document.getElementById('modal-root'); root.style.display = 'block';
+  root.innerHTML = `<div class="modal"><div class="box">
+    <h3>${e.title}</h3>
+    <p class="small">${e.desc}</p>
+    <div style="margin-top:12px" id="event-choices"></div>
+    <div style="margin-top:12px;display:flex;justify-content:flex-end">
+      <button onclick="closeModal()">Kapat</button>
+    </div>
+  </div></div>`;
+  const choices = document.getElementById('event-choices');
+  e.choices.forEach((c, idx)=>{
+    const b = document.createElement('button'); b.textContent = c.txt;
+    b.style.display='block'; b.style.width='100%'; b.style.marginTop='8px';
+    b.onclick = ()=>{ c.do(); closeModal(); autosave(); renderAll(); };
+    choices.appendChild(b);
+  });
+}
+
+function openModalQuiz(subject, q){
+  const root = document.getElementById('modal-root'); root.style.display = 'block';
+  root.innerHTML = `<div class="modal"><div class="box">
+    <h3>Sınıf Quiz: ${subject}</h3>
+    <p class="small">${q.q}</p>
+    <div class="quiz-choices" id="quiz-choices"></div>
+    <div style="margin-top:12px;display:flex;justify-content:flex-end">
+      <button onclick="closeModal()">Çık</button>
+    </div>
+  </div></div>`;
+  const container = document.getElementById('quiz-choices');
+  q.a.forEach((opt, idx)=>{
+    const b = document.createElement('button'); b.textContent = opt;
+    b.onclick = ()=>{
+      if(idx === q.correct){
+        state.player.gpa = clamp(state.player.gpa + rand(0.02,0.08),0,4);
+        state.player.stress = clamp(state.player.stress - 6,0,100);
+        log("Doğru cevap! Notların olumlu etkilendi.");
+      } else {
+        state.player.gpa = clamp(state.player.gpa - rand(0.01,0.04),0,4);
+        state.player.stress = clamp(state.player.stress + 6,0,100);
+        log("Yanlış cevap. Biraz daha çalışmalısın.");
+      }
+      closeModal(); autosave(); renderAll();
     };
+    container.appendChild(b);
+  });
+}
 
-    let state = load() || JSON.parse(JSON.stringify(defaultState));
+function openModalWeeklyTest(subject, questions){
+  // simple 3 question test
+  const qs = [];
+  for(let i=0;i<3;i++) qs.push(questions[Math.floor(Math.random()*questions.length)]);
+  const root = document.getElementById('modal-root'); root.style.display = 'block';
 
-    // --- Render ---
-    function render(){
-      document.getElementById('name').textContent = "İsim: " + state.name;
-      document.getElementById('age').textContent = "Yaş: " + state.age;
-      document.getElementById('day').textContent = "Gün: " + state.day;
-      document.getElementById('money').textContent = Math.round(state.money);
+  let score = 0; let idx = 0;
+  root.innerHTML = `<div class="modal"><div class="box" id="test-box"></div></div>`;
+  function showQuestion(){
+    const box = document.getElementById('test-box');
+    const cur = qs[idx];
+    box.innerHTML = `<h3>Haftalık Test — ${subject} (${idx+1}/${qs.length})</h3>
+      <p class="small">${cur.q}</p>
+      <div class="quiz-choices" id="test-choices"></div>
+      <div style="margin-top:12px;display:flex;justify-content:flex-end"><button onclick="closeModal()">Çık</button></div>`;
+    const cont = document.getElementById('test-choices');
+    cur.a.forEach((opt,oidx)=>{
+      const b = document.createElement('button'); b.textContent = opt;
+      b.onclick = ()=>{
+        if(oidx === cur.correct){ score++; log("Test: doğru cevap."); } else log("Test: yanlış cevap.");
+        idx++;
+        if(idx < qs.length) showQuestion(); else finishTest();
+      };
+      cont.appendChild(b);
+    });
+  }
+  function finishTest(){
+    const box = document.getElementById('test-box');
+    const change = (score/qs.length - 0.5) * 0.2; // -0.1 .. +0.1 to gpa
+    state.player.gpa = clamp(state.player.gpa + change, 0,4);
+    state.player.stress = clamp(state.player.stress + (score < 2 ? 8 : -6), 0,100);
+    box.innerHTML = `<h3>Test Bitti</h3><p class="small">Doğru: ${score}/${qs.length}. Notlara etki: ${change >=0 ? '+' : ''}${change.toFixed(2)}</p>
+      <div style="margin-top:10px;display:flex;justify-content:flex-end"><button onclick="closeModal()">Tamam</button></div>`;
+    autosave(); renderAll();
+  }
+  showQuestion();
+}
 
-      document.getElementById('healthBar').style.width = Math.max(0, Math.min(100, state.health)) + "%";
-      document.getElementById('stressBar').style.width = Math.max(0, Math.min(100, state.stress)) + "%";
+/* ---------- FAMILY / SOCIAL ---------- */
+function meetFamily(){
+  state.player.stress = clamp(state.player.stress - 18,0,100);
+  state.player.energy = clamp(state.player.energy - 8,0,100);
+  log("Ailenle güzel vakit geçirdin. Stres düştü.");
+  autosave(); renderAll();
+}
+function meetFriend(){
+  state.player.stress = clamp(state.player.stress - 12,0,100);
+  state.player.energy = clamp(state.player.energy - 14,0,100);
+  const spend = Math.min(state.player.money, randInt(10,60));
+  state.player.money -= spend;
+  log(`Arkadaşlarla dışarı çıktın. Harcandı: ₺${Math.round(spend)}`);
+  autosave(); renderAll();
+}
 
-      // market
-      const ml = document.getElementById('marketList'); ml.innerHTML = "";
-      state.market.forEach(it=>{
-        const div = document.createElement('div'); div.className='item';
-        div.innerHTML = `<div><strong>${it.name}</strong><div style="font-size:12px;color:var(--muted)">$${it.price.toFixed(2)}</div></div>
-          <div>
-            <button onclick="buy('${it.id}')">Al</button>
-            <button onclick="sell('${it.id}')">Sat</button>
-          </div>`;
-        ml.appendChild(div);
-      });
+/* ---------- MODAL UTIL ---------- */
+function closeModal(){ const r=document.getElementById('modal-root'); r.style.display='none'; r.innerHTML=''; }
 
-      // inventory
-      const inv = document.getElementById('inventory'); inv.innerHTML = "";
-      const keys = Object.keys(state.inventory);
-      if(keys.length===0) inv.textContent = "Boş";
-      else keys.forEach(k=>{
-        inv.innerHTML += `<div>${k}: ${state.inventory[k]}</div>`;
-      });
-    }
+/* ---------- SAVE / LOAD ---------- */
+function autosave(){ if(state.settings.autosave) saveGame(); }
+function saveGame(){
+  localStorage.setItem('eywallah_save_v1', JSON.stringify(state));
+  document.getElementById('btn-save').textContent = 'Kaydedildi ✓';
+  setTimeout(()=>document.getElementById('btn-save').textContent = 'Kaydet', 1200);
+}
+function loadGame(){
+  try{
+    const s = localStorage.getItem('eywallah_save_v1');
+    return s ? JSON.parse(s) : null;
+  }catch(e){ return null; }
+}
+function resetGame(){
+  if(confirm("Oyunu sıfırlamak istediğine emin misin?")) {
+    localStorage.removeItem('eywallah_save_v1');
+    state = JSON.parse(JSON.stringify(defaultState));
+    renderAll(); log("Oyun sıfırlandı. Yeni başlangıç.");
+  }
+}
 
-    // --- Piyasa güncelleme ---
-    function updateMarketPrices(){
-      state.market.forEach(it=>{
-        // random walk
-        const change = (Math.random() - 0.48) * it.volatility * 2; // yön ve büyüklük
-        let newPrice = it.price * (1 + change);
-        if(newPrice < it.minPrice) newPrice = it.minPrice + Math.random()*2;
-        it.price = Math.round(newPrice * 100)/100;
-      });
-    }
+/* ---------- UI HOOKS ---------- */
+document.getElementById('btn-next-day').onclick = nextDay;
+document.getElementById('btn-save').onclick = saveGame;
+document.getElementById('btn-load').onclick = ()=>{ const s = loadGame(); if(s){ state = s; renderAll(); log("Kayıt yüklendi."); } else alert("Kayıt bulunamadı."); };
+document.getElementById('btn-reset').onclick = resetGame;
 
-    // --- Al / Sat ---
-    function buy(id){
-      const item = state.market.find(x=>x.id===id);
-      if(!item) return;
-      if(state.money < item.price){ alert("Paran yetmiyor kk"); return; }
-      state.money -= item.price;
-      state.inventory[id] = (state.inventory[id]||0) + 1;
-      save();
-      render();
-    }
+/* ---------- INITIAL SETUP ---------- */
+function init(){
+  // if first time, show prompt to set name/family
+  const s = loadGame();
+  if(!s){
+    const name = prompt("İsim gir (örn: Ali):","Eywallah");
+    const family = prompt("Aile durumu? (Zengin / Orta / Fakir)","Orta");
+    state.player.name = name || state.player.name;
+    state.player.family = (family==="Zengin"||family==="Fakir")?family:"Orta";
+    // small tutorial log
+    log(`Merhaba ${state.player.name}! Okula hoşgeldin. Eywallah!`);
+    saveGame();
+  } else {
+    log("Kayıt bulundu. Devam ediyorsun.");
+  }
+  // ensure initial render
+  renderAll();
+}
 
-    function sell(id){
-      if(!state.inventory[id] || state.inventory[id] <=0){ alert("Envanterinde yok"); return; }
-      const item = state.market.find(x=>x.id===id);
-      const sellPrice = item.price * 0.9; // komisyon
-      state.inventory[id] -= 1;
-      state.money += sellPrice;
-      save(); render();
-    }
+// autosave every 20s
+setInterval(()=>{ saveGame(); }, 20000);
 
-    // --- Gün tick ---
-    function tickDay(){
-      state.day += 1;
-      // her 365 gün yaş ++
-      if(state.day % 365 === 0) state.age += 1;
-      // market değişir
-      updateMarketPrices();
-      // rastgele olay: %30 chance
-      if(Math.random() < 0.30) triggerRandomEvent();
-      // zamanla sağlık/stres değişimi
-      state.health = Math.max(0, Math.min(100, state.health - 0.2 + (Math.random()-0.4)*1 ));
-      state.stress = Math.max(0, Math.min(100, state.stress + (Math.random()*2 - 0.6) ));
-      // küçük pasif gelir (ör. iş)
-      state.money += 5;
-      save(); render();
-    }
-
-    // --- Olay sistemi (basit) ---
-    const events = [
-      {id:"sick", title:"Hafif hastalandın", choices:[
-        {t:"Doktora git (-$50, +health10, -stress20)", do(){ state.money-=50; state.health+=10; state.stress-=20 }},
-        {t:"Evde dinlen (+energy5)", do(){ state.health+=5; state.stress-=5 }},
-        {t:"Çalışmaya devam (-health5, +money20)", do(){ state.health-=5; state.money+=20 }}
-      ]},
-      {id:"phone_break", title:"Telefonun bozuldu", choices:[
-        {t:"Tamir et -$100", do(){ state.money-=100; }},
-        {t:"Yeni al -$400", do(){ state.money-=400; state.inventory['phone']= (state.inventory['phone']||0)+1 }},
-        {t:"Eskiyle devam", do(){ state.stress+=5 }}
-      ]}
-    ];
-
-    function triggerRandomEvent(){
-      const e = events[Math.floor(Math.random()*events.length)];
-      const choiceText = e.choices.map((c,i)=> (i+1)+". "+c.t).join("\n");
-      const sel = prompt(`Olay: ${e.title}\nSeçenekler:\n${choiceText}\nSeçim numarası gir (1-${e.choices.length})`);
-      const idx = parseInt(sel) - 1;
-      if(!isNaN(idx) && e.choices[idx]) e.choices[idx].do();
-      else { /* geç */ }
-    }
-
-    // --- Kaydet / yükle ---
-    function save(){ localStorage.setItem('eywallahSimSave', JSON.stringify(state)); }
-    function load(){ try{ const s = localStorage.getItem('eywallahSimSave'); return s?JSON.parse(s):null }catch(e){return null} }
-
-    // Buton bağlama
-    document.getElementById('tickBtn').onclick = tickDay;
-    document.getElementById('saveBtn').onclick = ()=>{ save(); alert("Kaydedildi kk") };
-    document.getElementById('loadBtn').onclick = ()=>{ state = load()||state; render(); alert("Yüklendi") };
-
-    // ilk render
-    render();
-  </script>
+init();
+</script>
 </body>
 </html>

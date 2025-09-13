@@ -4,100 +4,90 @@
   <meta charset="UTF-8">
   <title>Eywallah Sim</title>
   <style>
-    body { margin: 0; font-family: Arial, sans-serif; background: #111; color: white; }
-    #loginScreen, #gameScreen { display: none; }
-    #gameScreen { width: 100vw; height: 100vh; overflow: hidden; position: relative; } /* Game screen'i tam ekran kaplasın */
-    #hud { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 8px; z-index: 10; }
+    body { margin:0; font-family:Arial,sans-serif; background:#111; color:white; }
+    #gameScreen { display:none; width:100vw; height:100vh; position:relative; }
+    #hud { position:absolute; top:10px; left:10px; background:rgba(0,0,0,0.6); padding:10px; border-radius:8px; z-index:10; }
+    #hud p { margin:4px 0; }
     #eventBox {
-      position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-      background: rgba(0,0,0,0.8); padding: 15px; border-radius: 10px;
-      display: none; flex-direction: column; align-items: center; justify-content: center;
-      z-index: 10;
-      min-width: 300px;
+      position:absolute; bottom:20px; left:50%; transform:translateX(-50%);
+      background:rgba(0,0,0,0.85); padding:15px; border-radius:10px;
+      display:none; flex-direction:column; min-width:350px; z-index:20;
     }
-    #eventBox button { margin: 5px; padding: 10px 15px; cursor: pointer; background-color: #4CAF50; color: white; border: none; border-radius: 5px; }
-    #eventBox button:hover { background-color: #45a049; }
-
-    canvas { display: block; width: 100%; height: 100%; } /* Canvas tam ekran kaplasın */
-
-    /* Popup Stilleri */
-    .popup-overlay {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center;
-      z-index: 1000;
-      opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease;
+    #eventBox button { margin:5px; padding:10px 15px; border:none; border-radius:5px; cursor:pointer; background:#4CAF50; color:white; }
+    #market, #actions {
+      position:absolute; top:200px; left:10px; background:rgba(0,0,0,0.7); padding:10px; border-radius:8px; z-index:10; margin-top:10px;
     }
-    .popup-overlay.active {
-      opacity: 1; visibility: visible;
-    }
-    .popup-content {
-      background: #222; padding: 30px; border-radius: 10px; text-align: center;
-      width: 350px; max-width: 90%; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-      position: relative;
-    }
-    .popup-content h1 { margin-top: 0; color: #eee; }
-    .popup-content input { margin: 8px 0; padding: 12px; width: calc(100% - 24px); border: 1px solid #555; background: #333; color: white; border-radius: 5px; }
-    .popup-content button {
-      padding: 12px 25px; margin: 8px 5px; cursor: pointer;
-      background-color: #007bff; color: white; border: none; border-radius: 5px;
-      font-size: 16px;
-      transition: background-color 0.2s ease;
-    }
-    .popup-content button:hover { background-color: #0056b3; }
-    .popup-content .auth-option-btn {
-      background-color: #555;
-      margin-top: 15px;
-    }
-    .popup-content .auth-option-btn:hover {
-      background-color: #777;
-    }
-    .popup-content .google-btn {
-      background-color: #dd4b39; /* Google kırmızısı */
-    }
-    .popup-content .google-btn:hover {
-      background-color: #c23321;
-    }
-    #loginMsg { color: yellow; margin-top: 10px; }
+    #actions { top:420px; }
+    #market h3, #actions h3 { margin:0 0 5px 0; }
+    canvas { display:block; width:100%; height:100%; }
     #openLoginPopupBtn {
-        position: absolute;
-        top: 20px;
-        right: 20px;
-        padding: 10px 20px;
-        background-color: #007bff;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        z-index: 10;
+      position:absolute; top:20px; right:20px;
+      padding:10px 20px; background:#007bff; border:none; border-radius:5px;
+      color:white; cursor:pointer; z-index:20;
     }
+    .popup-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center; z-index:1000; opacity:0; visibility:hidden; transition:.3s; }
+    .popup-overlay.active{opacity:1;visibility:visible;}
+    .popup-content{background:#222; padding:30px; border-radius:10px; width:350px; text-align:center;}
+    .popup-content input{width:90%;margin:8px 0;padding:10px;background:#333;border:1px solid #555;color:white;border-radius:5px;}
+    .popup-content button{margin:5px;padding:10px 20px;border:none;border-radius:5px;cursor:pointer;}
+    .google-btn{background:#dd4b39;color:white;}
   </style>
 </head>
 <body>
-  <!-- Login Popup -->
+  <!-- Login -->
   <div id="loginPopupOverlay" class="popup-overlay">
     <div class="popup-content">
       <h1>Eywallah Sim 🔑</h1>
       <input type="email" id="email" placeholder="Email">
       <input type="password" id="password" placeholder="Şifre">
       <div>
-        <button id="loginButton">Giriş Yap</button>
+        <button id="loginButton">Giriş</button>
         <button id="registerButton">Kayıt Ol</button>
       </div>
       <p id="loginMsg"></p>
-      <hr style="border-color: #555; margin: 20px 0;">
-      <button id="signInWithGoogle" class="google-btn">Google ile Giriş Yap</button>
-      <button id="signInAnonymously" class="auth-option-btn">Anonim Giriş</button>
+      <hr>
+      <button id="signInWithGoogle" class="google-btn">Google ile Giriş</button>
+      <button id="signInAnonymously">Anonim Giriş</button>
     </div>
   </div>
 
-  <!-- Game Screen -->
+  <!-- Game -->
   <div id="gameScreen">
-    <button id="openLoginPopupBtn">Giriş / Kayıt</button> <!-- Oyun ekranında giriş/kayıt popup'ını açacak buton -->
+    <button id="openLoginPopupBtn">Giriş/Kayıt</button>
     <div id="hud">
-      <p>💰 Para: <span id="money">500</span></p>
+      <p>💰 TL: <span id="money">500</span></p>
+      <p>💵 Dolar: <span id="dollars">0</span></p>
+      <p>💹 Kur: <span id="usdRate">32.00</span></p>
+      <p>🥇 Altın: <span id="gold">0</span></p>
+      <p>🏦 Borsa: <span id="stocks">0</span></p>
+      <p>📊 Endeks: <span id="stockIndex">5000</span></p>
+      <p>🏠 Ev: <span id="houses">0</span></p>
+      <p>🚗 Arabalar: <span id="cars">0</span></p>
+      <p>👔 Meslek: <span id="job">Yok</span></p>
       <p>🎂 Yaş: <span id="age">15</span></p>
       <p>🧠 Stres: <span id="stress">20</span></p>
+      <p>❤️ Evli mi?: <span id="married">Hayır</span></p>
     </div>
+
+    <div id="market">
+      <h3>💱 Piyasa</h3>
+      <button onclick="buyDollar()">Dolar Al</button>
+      <button onclick="sellDollar()">Dolar Sat</button><br>
+      <button onclick="buyGold()">Altın Al</button>
+      <button onclick="sellGold()">Altın Sat</button><br>
+      <button onclick="buyStock()">Borsa Al</button>
+      <button onclick="sellStock()">Borsa Sat</button>
+    </div>
+
+    <div id="actions">
+      <h3>⚡ Aksiyonlar</h3>
+      <button onclick="buyHouse()">Ev Satın Al</button>
+      <button onclick="buyCar()">Araba Satın Al</button><br>
+      <button onclick="chooseJob()">Meslek Seç</button>
+      <button onclick="startBusiness()">Dükkan Aç</button><br>
+      <button onclick="tryMarriage()">Evlen</button>
+    </div>
+
     <div id="eventBox">
       <p id="eventText">Olay geliyor...</p>
       <div>
@@ -111,317 +101,141 @@
   <script type="module">
     import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.150.0/build/three.module.js";
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import {
-      getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
-      onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInAnonymously
-    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
     import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     // Firebase Config
     const firebaseConfig = {
-      apiKey: "AIzaSyDdkE1j3ClDiNwZLobg09MRpH-vGLQJv-s",
-      authDomain: "eywallahsimulator.firebaseapp.com",
-      projectId: "eywallahsimulator",
-      storageBucket: "eywallahsimulator.appspot.com",
-      messagingSenderId: "734785567506",
-      appId: "1:734785567506:web:1ebdba4ac2e37b907991cb",
-      measurementId: "G-86GQX5G1S3"
+      apiKey:"AIzaSyDdkE1j3ClDiNwZLobg09MRpH-vGLQJv-s",
+      authDomain:"eywallahsimulator.firebaseapp.com",
+      projectId:"eywallahsimulator",
+      storageBucket:"eywallahsimulator.appspot.com",
+      messagingSenderId:"734785567506",
+      appId:"1:734785567506:web:1ebdba4ac2e37b907991cb"
     };
+    const app=initializeApp(firebaseConfig);
+    const auth=getAuth(app);
+    const db=getFirestore(app);
+    const googleProvider=new GoogleAuthProvider();
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-    const googleProvider = new GoogleAuthProvider();
+    let currentUser=null;
+    let gameData={money:500,dollars:0,gold:0,stocks:0,houses:0,cars:0,job:"Yok",business:false,married:false,age:15,stress:20};
+    let usdRate=32.0,goldRate=2000.0,stockIndex=5000;
 
-    let currentUser = null;
-    let gameData = { money: 500, age: 15, stress: 20 };
-    let currentEvent = null; // Aktif olayı tutmak için
-
-    const loginMsgElement = document.getElementById("loginMsg");
-    const loginPopupOverlay = document.getElementById("loginPopupOverlay");
-    const emailInput = document.getElementById("email");
-    const passwordInput = document.getElementById("password");
-
-    // --- Firebase Authentication Fonksiyonları ---
-
-    async function handleAuthError(err) {
-      console.error("Auth Error:", err);
-      let message = "Bir hata oluştu.";
-      if (err.code === "auth/email-already-in-use") {
-        message = "Bu e-posta adresi zaten kayıtlı.";
-      } else if (err.code === "auth/invalid-email") {
-        message = "Geçersiz e-posta adresi.";
-      } else if (err.code === "auth/weak-password") {
-        message = "Parola en az 6 karakter olmalı.";
-      } else if (err.code === "auth/user-not-found" || err.code === "auth/wrong-password") {
-        message = "E-posta veya parola hatalı.";
-      }
-      loginMsgElement.innerText = message;
+    // --- Save/Load ---
+    async function saveGameData(){ if(!currentUser||currentUser.isAnonymous)return; await setDoc(doc(db,"users",currentUser.uid),gameData); }
+    async function loadGameData(){
+      if(!currentUser||currentUser.isAnonymous)return;
+      const ref=doc(db,"users",currentUser.uid); const snap=await getDoc(ref);
+      if(snap.exists()) gameData=snap.data(); else await saveGameData();
     }
 
-    // E-posta ile Giriş
-    async function loginWithEmail() {
-      const email = emailInput.value;
-      const pass = passwordInput.value;
-      try {
-        await signInWithEmailAndPassword(auth, email, pass);
-        // onAuthStateChanged tetiklenecek ve oyunu başlatacak
-      } catch (err) {
-        handleAuthError(err);
-      }
+    // --- HUD ---
+    function updateHUD(){
+      document.getElementById("money").innerText=gameData.money.toFixed(0);
+      document.getElementById("dollars").innerText=gameData.dollars;
+      document.getElementById("usdRate").innerText=usdRate.toFixed(2);
+      document.getElementById("gold").innerText=gameData.gold;
+      document.getElementById("stocks").innerText=gameData.stocks;
+      document.getElementById("stockIndex").innerText=stockIndex.toFixed(0);
+      document.getElementById("houses").innerText=gameData.houses;
+      document.getElementById("cars").innerText=gameData.cars;
+      document.getElementById("job").innerText=gameData.job;
+      document.getElementById("married").innerText=gameData.married?"Evet":"Hayır";
+      document.getElementById("age").innerText=gameData.age;
+      document.getElementById("stress").innerText=gameData.stress;
+      saveGameData();
     }
 
-    // E-posta ile Kayıt Ol
-    async function registerWithEmail() {
-      const email = emailInput.value;
-      const pass = passwordInput.value;
-      try {
-        await createUserWithEmailAndPassword(auth, email, pass);
-        // onAuthStateChanged tetiklenecek ve oyunu başlatacak
-      } catch (err) {
-        handleAuthError(err);
-      }
-    }
-
-    // Google ile Giriş
-    async function signInWithGoogle() {
-      try {
-        await signInWithPopup(auth, googleProvider);
-        // onAuthStateChanged tetiklenecek ve oyunu başlatacak
-      } catch (err) {
-        handleAuthError(err);
-      }
-    }
-
-    // Anonim Giriş
-    async function signInAsAnonymous() {
-      try {
-        await signInAnonymously(auth);
-        // onAuthStateChanged tetiklenecek ve oyunu başlatacak
-      } catch (err) {
-        handleAuthError(err);
-      }
-    }
-
-    // Kullanıcı Durumu Kontrolü
-    onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        currentUser = user;
-        loginMsgElement.innerText = `Hoşgeldin, ${user.isAnonymous ? "Anonim Kullanıcı" : user.email || user.displayName || user.uid}!`;
-        hideLoginPopup(); // Giriş başarılıysa popup'ı kapat
-        await loadGameData();
-        startGame();
-      } else {
-        currentUser = null;
-        loginMsgElement.innerText = "";
-        showLoginPopup(); // Kullanıcı yoksa popup'ı göster
-        // Oyun ekranını gizle (eğer açıksa)
-        document.getElementById("gameScreen").style.display = "none";
-        // HUD'ı sıfırla veya varsayılan değerleri göster
-        document.getElementById("money").innerText = 500;
-        document.getElementById("age").innerText = 15;
-        document.getElementById("stress").innerText = 20;
-      }
-    });
-
-    // --- Oyun Verisi Yönetimi ---
-
-    // Veri Kaydetme
-    async function saveGameData() {
-      if (!currentUser || currentUser.isAnonymous) {
-        // Anonim kullanıcılar için veri kaydetme desteklenmeyebilir veya farklı işlenebilir
-        // Şu anki kurallar sadece authenticated kullanıcılar için yazılmış.
-        console.warn("Anonim kullanıcılar için veya kullanıcı yokken veri kaydedilemez.");
-        return;
-      }
-      try {
-        await setDoc(doc(db, "users", currentUser.uid), gameData);
-      } catch (error) {
-        console.error("Oyun verisi kaydedilirken hata oluştu:", error);
-      }
-    }
-
-    // Veri Yükleme
-    async function loadGameData() {
-      if (!currentUser) return;
-
-      // Anonim kullanıcılar için oyun verisi farklı şekilde yönetilebilir veya ilk kez başlatılabilir
-      if (currentUser.isAnonymous) {
-          gameData = { money: 500, age: 15, stress: 20 }; // Anonim kullanıcı için yeni oyun verisi
-          console.log("Anonim kullanıcı için yeni oyun başlatıldı.");
-          return;
-      }
-
-      const ref = doc(db, "users", currentUser.uid);
-      try {
-        const snap = await getDoc(ref);
-        if (snap.exists()) {
-          gameData = snap.data();
-          console.log("Kayıtlı oyun verisi yüklendi:", gameData);
-        } else {
-          gameData = { money: 500, age: 15, stress: 20 }; // Yeni kullanıcı için varsayılan
-          await saveGameData(); // Yeni veriyi kaydet
-          console.log("Yeni kullanıcı için varsayılan oyun verisi oluşturuldu ve kaydedildi.");
-        }
-      } catch (error) {
-        console.error("Oyun verisi yüklenirken hata oluştu:", error);
-        gameData = { money: 500, age: 15, stress: 20 }; // Hata durumunda varsayılan değerler
-      }
-    }
-
-    // --- Oyun Mekanikleri ---
-
-    function startGame() {
-      document.getElementById("gameScreen").style.display = "block";
+    // --- Market ---
+    function updateMarket(){
+      usdRate+= (Math.random()-0.5)*0.5;
+      goldRate+= (Math.random()-0.5)*20;
+      stockIndex+= (Math.random()-0.5)*100;
       updateHUD();
-      initScene();
-      // Önceki interval'ı temizle, tekrar başlamaması için
-      if (window.eventInterval) clearInterval(window.eventInterval);
-      window.eventInterval = setInterval(randomEvent, 15000); // 15 saniyede bir olay
     }
+    setInterval(updateMarket,5000);
+    function buyDollar(){ if(gameData.money>=usdRate){gameData.money-=usdRate;gameData.dollars++;updateHUD();}}
+    function sellDollar(){ if(gameData.dollars>0){gameData.dollars--;gameData.money+=usdRate;updateHUD();}}
+    function buyGold(){ if(gameData.money>=goldRate){gameData.money-=goldRate;gameData.gold++;updateHUD();}}
+    function sellGold(){ if(gameData.gold>0){gameData.gold--;gameData.money+=goldRate;updateHUD();}}
+    function buyStock(){ if(gameData.money>=stockIndex){gameData.money-=stockIndex;gameData.stocks++;updateHUD();}}
+    function sellStock(){ if(gameData.stocks>0){gameData.stocks--;gameData.money+=stockIndex;updateHUD();}}
 
-    function updateHUD() {
-      document.getElementById("money").innerText = gameData.money;
-      document.getElementById("age").innerText = gameData.age;
-      document.getElementById("stress").innerText = gameData.stress;
-      saveGameData(); // Her HUD güncellemesinde veriyi kaydet
+    // --- Actions ---
+    function buyHouse(){ if(gameData.money>=100000){gameData.money-=100000;gameData.houses++;updateHUD();} }
+    function buyCar(){ if(gameData.money>=50000){gameData.money-=50000;gameData.cars++;updateHUD();} }
+    function chooseJob(){
+      const jobs=["Doktor","Yazılımcı","Öğretmen","Galerici","Esnaf"];
+      const job=jobs[Math.floor(Math.random()*jobs.length)];
+      gameData.job=job; if(job==="Doktor")gameData.money+=2000;
+      if(job==="Yazılımcı")gameData.money+=1500;
+      if(job==="Öğretmen")gameData.money+=800;
+      if(job==="Galerici")gameData.money+=1000;
+      if(job==="Esnaf")gameData.money+=600;
+      gameData.stress+=5; updateHUD();
     }
-
-    // RANDOM EVENTS
-    const events = [
-      {
-        text: "Arkadaşın sinemaya çağırdı",
-        opt1Text: "Git (Mutluluk +)", opt1Effect: () => { gameData.stress -= 10; },
-        opt2Text: "Gitme (Para +)", opt2Effect: () => { gameData.money += 50; }
-      },
-      {
-        text: "Kumar fırsatı! (20+ yaş için)",
-        opt1Text: "Oyna (Riskli)", opt1Effect: () => {
-          if (Math.random() > 0.5) { gameData.money += 200; loginMsgElement.innerText = "Kumar kazandın!"; }
-          else { gameData.money -= 100; gameData.stress += 15; loginMsgElement.innerText = "Kumar kaybettin!"; }
-        },
-        opt2Text: "Reddet (Güvenli)", opt2Effect: () => { gameData.stress -= 5; loginMsgElement.innerText = "Kafan rahat."; },
-        condition: () => gameData.age >= 20
-      },
-      {
-        text: "Ev fiyatları arttı, satacak mısın?",
-        opt1Text: "Sat (Para +)", opt1Effect: () => { gameData.money += 1000; },
-        opt2Text: "Bekle (Risk)", opt2Effect: () => { gameData.stress += 5; }
-      },
-      {
-        text: "Yeni bir iş teklifi geldi!",
-        opt1Text: "Kabul Et (Para++, Stres+)", opt1Effect: () => { gameData.money += 500; gameData.stress += 10; },
-        opt2Text: "Reddet (Para--, Stres-)", opt2Effect: () => { gameData.money -= 100; gameData.stress -= 5; }
+    function startBusiness(){
+      if(gameData.money>=20000){
+        gameData.money-=20000;
+        if(Math.random()>0.5){ gameData.money+=50000; alert("Dükkan başarılı oldu!"); }
+        else{ alert("Dükkan battı!"); }
+        updateHUD();
       }
+    }
+    function tryMarriage(){
+      if(gameData.age>=18 && !gameData.married){
+        if(Math.random()>0.3){gameData.married=true;alert("Evlenmeyi başardın!");}
+        else{alert("Reddedildin :(");}
+        updateHUD();
+      }
+    }
+
+    // --- Events ---
+    const events=[
+      {text:"Arkadaş sinemaya çağırdı",opt1Text:"Git",opt1Effect:()=>{gameData.stress-=10;},opt2Text:"Gitme",opt2Effect:()=>{gameData.money+=50;}},
+      {text:"Kumar fırsatı (20+)",condition:()=>gameData.age>=20,opt1Text:"Oyna",opt1Effect:()=>{if(Math.random()>0.5)gameData.money+=2000;else gameData.money-=1000;},opt2Text:"Reddet",opt2Effect:()=>{gameData.stress-=5;}},
+      {text:"Ev fiyatları arttı!",opt1Text:"Ev sat",opt1Effect:()=>{if(gameData.houses>0){gameData.houses--;gameData.money+=120000;}},opt2Text:"Bekle",opt2Effect:()=>{gameData.stress+=5;}},
+      {text:"Araba almak isteyen müşteri geldi",opt1Text:"Sat",opt1Effect:()=>{if(gameData.cars>0){gameData.cars--;gameData.money+=60000;}},opt2Text:"Satma",opt2Effect:()=>{gameData.stress-=2;}},
+      {text:"Proje girişimi şansı",opt1Text:"Başla",opt1Effect:()=>{if(Math.random()>0.5){gameData.money+=100000;}else{gameData.money-=30000;}},opt2Text:"Reddet",opt2Effect:()=>{}}
     ];
+    let currentEvent=null;
+    function randomEvent(){
+      const available=events.filter(e=>!e.condition||e.condition());
+      currentEvent=available[Math.floor(Math.random()*available.length)];
+      document.getElementById("eventBox").style.display="flex";
+      document.getElementById("eventText").innerText=currentEvent.text;
+      document.getElementById("option1Button").innerText=currentEvent.opt1Text;
+      document.getElementById("option2Button").innerText=currentEvent.opt2Text;
+    }
+    function chooseOption(opt){ if(!currentEvent)return; if(opt===1)currentEvent.opt1Effect();else currentEvent.opt2Effect(); document.getElementById("eventBox").style.display="none"; updateHUD(); }
 
-    function randomEvent() {
-      // Sadece condition'ı karşılayan olayları filtrele
-      const availableEvents = events.filter(e => !e.condition || e.condition());
-      if (availableEvents.length === 0) return; // Uygun olay yoksa geri dön
-
-      currentEvent = availableEvents[Math.floor(Math.random() * availableEvents.length)];
-      document.getElementById("eventBox").style.display = "flex";
-      document.getElementById("eventText").innerText = currentEvent.text;
-      document.getElementById("option1Button").innerText = currentEvent.opt1Text;
-      document.getElementById("option2Button").innerText = currentEvent.opt2Text;
+    // --- 3D Scene ---
+    let scene,camera,renderer;
+    function initScene(){
+      scene=new THREE.Scene();
+      camera=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,1000);
+      renderer=new THREE.WebGLRenderer({canvas:document.getElementById("gameCanvas")});
+      renderer.setSize(window.innerWidth,window.innerHeight);
+      const light=new THREE.AmbientLight(0xffffff,1);scene.add(light);
+      for(let i=0;i<50;i++){let g=new THREE.BoxGeometry(2,Math.random()*10+2,2);let m=new THREE.MeshStandardMaterial({color:Math.random()*0xffffff});let c=new THREE.Mesh(g,m);c.position.set(Math.random()*60-30,g.parameters.height/2,Math.random()*60-30);scene.add(c);}
+      camera.position.set(25,15,25);camera.lookAt(0,0,0);
+      function animate(){requestAnimationFrame(animate);renderer.render(scene,camera);} animate();
     }
 
-    function chooseOption(optNum) {
-      if (!currentEvent) return; // Olay yoksa bir şey yapma
+    // --- Game Start ---
+    function startGame(){document.getElementById("gameScreen").style.display="block";updateHUD();initScene();if(window.eventInterval)clearInterval(window.eventInterval);window.eventInterval=setInterval(randomEvent,20000);}
 
-      if (optNum === 1) {
-        currentEvent.opt1Effect();
-      } else if (optNum === 2) {
-        currentEvent.opt2Effect();
-      }
-      currentEvent = null; // Olayı sıfırla
-      document.getElementById("eventBox").style.display = "none";
-      updateHUD(); // HUD'ı ve veriyi güncelle
-    }
+    // --- Auth ---
+    document.getElementById("loginButton").onclick=()=>signInWithEmailAndPassword(auth,emailInput.value,passwordInput.value).catch(console.error);
+    document.getElementById("registerButton").onclick=()=>createUserWithEmailAndPassword(auth,emailInput.value,passwordInput.value).catch(console.error);
+    document.getElementById("signInWithGoogle").onclick=()=>signInWithPopup(auth,googleProvider);
+    document.getElementById("signInAnonymously").onclick=()=>signInAnonymously(auth);
+    document.getElementById("option1Button").onclick=()=>chooseOption(1);
+    document.getElementById("option2Button").onclick=()=>chooseOption(2);
+    document.getElementById("openLoginPopupBtn").onclick=()=>document.getElementById("loginPopupOverlay").classList.add("active");
 
-    // --- Three.js Sahne Oluşturma ---
-    let camera, scene, renderer;
-    let cubes = [];
-
-    function initScene() {
-      const canvas = document.getElementById("gameCanvas");
-      if (!renderer) { // Sadece bir kere başlat
-          scene = new THREE.Scene();
-          camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-          renderer = new THREE.WebGLRenderer({ canvas });
-          renderer.setSize(window.innerWidth, window.innerHeight);
-
-          // Işıklandırma
-          const ambientLight = new THREE.AmbientLight(0x404040, 2); // Yumuşak ortam ışığı
-          scene.add(ambientLight);
-          const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-          directionalLight.position.set(5, 10, 5).normalize();
-          scene.add(directionalLight);
-
-          // Rastgele binalar
-          for (let i = 0; i < 50; i++) {
-              const geometry = new THREE.BoxGeometry(2, Math.random() * 10 + 2, 2);
-              const material = new THREE.MeshStandardMaterial({ color: Math.random() * 0xffffff });
-              const cube = new THREE.Mesh(geometry, material);
-              cube.position.set(Math.random() * 60 - 30, cube.geometry.parameters.height / 2, Math.random() * 60 - 30);
-              cubes.push(cube);
-              scene.add(cube);
-          }
-
-          // Kamera pozisyonu
-          camera.position.set(25, 15, 25);
-          camera.lookAt(0, 0, 0);
-
-          // Animasyon döngüsü
-          function animate() {
-              requestAnimationFrame(animate);
-              // Küpleri döndür
-              cubes.forEach(cube => {
-                  cube.rotation.y += 0.001;
-              });
-              renderer.render(scene, camera);
-          }
-          animate();
-
-          // Pencere boyutu değiştiğinde responsiflik
-          window.addEventListener('resize', () => {
-              camera.aspect = window.innerWidth / window.innerHeight;
-              camera.updateProjectionMatrix();
-              renderer.setSize(window.innerWidth, window.innerHeight);
-          });
-      }
-    }
-
-    // --- Popup Yönetimi ---
-    function showLoginPopup() {
-        loginPopupOverlay.classList.add('active');
-    }
-
-    function hideLoginPopup() {
-        loginPopupOverlay.classList.remove('active');
-        loginMsgElement.innerText = ""; // Mesajı temizle
-        emailInput.value = ""; // Formu temizle
-        passwordInput.value = "";
-    }
-
-    // --- DOM Yüklendiğinde Olay Dinleyicilerini Ata ---
-    document.addEventListener('DOMContentLoaded', () => {
-        // Auth butonları
-        document.getElementById('loginButton').addEventListener('click', loginWithEmail);
-        document.getElementById('registerButton').addEventListener('click', registerWithEmail);
-        document.getElementById('signInWithGoogle').addEventListener('click', signInWithGoogle);
-        document.getElementById('signInAnonymously').addEventListener('click', signInAsAnonymous);
-
-        // Oyun içi butonlar
-        document.getElementById('option1Button').addEventListener('click', () => chooseOption(1));
-        document.getElementById('option2Button').addEventListener('click', () => chooseOption(2));
-
-        // Oyun ekranından giriş popup'ını açacak buton
-        document.getElementById('openLoginPopupBtn').addEventListener('click', showLoginPopup);
-
-        // onAuthStateChanged fonksiyonu ilk yüklemede kullanıcıyı kontrol edecek ve popup'ı yönetecek.
-    });
+    onAuthStateChanged(auth,async(u)=>{if(u){currentUser=u;document.getElementById("loginPopupOverlay").classList.remove("active");await loadGameData();startGame();}else{currentUser=null;document.getElementById("loginPopupOverlay").classList.add("active");}});
   </script>
 </body>
 </html>

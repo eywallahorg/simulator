@@ -6,29 +6,93 @@
   <style>
     body { margin: 0; font-family: Arial, sans-serif; background: #111; color: white; }
     #loginScreen, #gameScreen { display: none; }
-    #loginScreen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
-    input { margin: 5px; padding: 10px; width: 200px; }
-    button { padding: 10px 20px; cursor: pointer; margin: 5px; }
-    #hud { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 8px; }
-    #eventBox { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); padding: 15px; border-radius: 10px; display: none; }
-    canvas { display: block; }
+    #gameScreen { width: 100vw; height: 100vh; overflow: hidden; position: relative; } /* Game screen'i tam ekran kaplasın */
+    #hud { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 8px; z-index: 10; }
+    #eventBox {
+      position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: rgba(0,0,0,0.8); padding: 15px; border-radius: 10px;
+      display: none; flex-direction: column; align-items: center; justify-content: center;
+      z-index: 10;
+      min-width: 300px;
+    }
+    #eventBox button { margin: 5px; padding: 10px 15px; cursor: pointer; background-color: #4CAF50; color: white; border: none; border-radius: 5px; }
+    #eventBox button:hover { background-color: #45a049; }
+
+    canvas { display: block; width: 100%; height: 100%; } /* Canvas tam ekran kaplasın */
+
+    /* Popup Stilleri */
+    .popup-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center;
+      z-index: 1000;
+      opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    .popup-overlay.active {
+      opacity: 1; visibility: visible;
+    }
+    .popup-content {
+      background: #222; padding: 30px; border-radius: 10px; text-align: center;
+      width: 350px; max-width: 90%; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      position: relative;
+    }
+    .popup-content h1 { margin-top: 0; color: #eee; }
+    .popup-content input { margin: 8px 0; padding: 12px; width: calc(100% - 24px); border: 1px solid #555; background: #333; color: white; border-radius: 5px; }
+    .popup-content button {
+      padding: 12px 25px; margin: 8px 5px; cursor: pointer;
+      background-color: #007bff; color: white; border: none; border-radius: 5px;
+      font-size: 16px;
+      transition: background-color 0.2s ease;
+    }
+    .popup-content button:hover { background-color: #0056b3; }
+    .popup-content .auth-option-btn {
+      background-color: #555;
+      margin-top: 15px;
+    }
+    .popup-content .auth-option-btn:hover {
+      background-color: #777;
+    }
+    .popup-content .google-btn {
+      background-color: #dd4b39; /* Google kırmızısı */
+    }
+    .popup-content .google-btn:hover {
+      background-color: #c23321;
+    }
+    #loginMsg { color: yellow; margin-top: 10px; }
+    #openLoginPopupBtn {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        z-index: 10;
+    }
   </style>
 </head>
 <body>
-  <!-- Login Screen -->
-  <div id="loginScreen">
-    <h1>Eywallah Sim 🔑</h1>
-    <input type="email" id="email" placeholder="Email">
-    <input type="password" id="password" placeholder="Şifre">
-    <div>
-      <button onclick="login()">Giriş Yap</button>
-      <button onclick="register()">Kayıt Ol</button>
+  <!-- Login Popup -->
+  <div id="loginPopupOverlay" class="popup-overlay">
+    <div class="popup-content">
+      <h1>Eywallah Sim 🔑</h1>
+      <input type="email" id="email" placeholder="Email">
+      <input type="password" id="password" placeholder="Şifre">
+      <div>
+        <button id="loginButton">Giriş Yap</button>
+        <button id="registerButton">Kayıt Ol</button>
+      </div>
+      <p id="loginMsg"></p>
+      <hr style="border-color: #555; margin: 20px 0;">
+      <button id="signInWithGoogle" class="google-btn">Google ile Giriş Yap</button>
+      <button id="signInAnonymously" class="auth-option-btn">Anonim Giriş</button>
     </div>
-    <p id="loginMsg" style="color: yellow;"></p>
   </div>
 
   <!-- Game Screen -->
   <div id="gameScreen">
+    <button id="openLoginPopupBtn">Giriş / Kayıt</button> <!-- Oyun ekranında giriş/kayıt popup'ını açacak buton -->
     <div id="hud">
       <p>💰 Para: <span id="money">500</span></p>
       <p>🎂 Yaş: <span id="age">15</span></p>
@@ -36,8 +100,10 @@
     </div>
     <div id="eventBox">
       <p id="eventText">Olay geliyor...</p>
-      <button onclick="chooseOption(1)">Seçenek 1</button>
-      <button onclick="chooseOption(2)">Seçenek 2</button>
+      <div>
+        <button id="option1Button">Seçenek 1</button>
+        <button id="option2Button">Seçenek 2</button>
+      </div>
     </div>
     <canvas id="gameCanvas"></canvas>
   </div>
@@ -45,10 +111,13 @@
   <script type="module">
     import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.150.0/build/three.module.js";
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import {
+      getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+      onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInAnonymously
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
     import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    // Firebase Config (GitHub Pages ile uyumlu)
+    // Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyDdkE1j3ClDiNwZLobg09MRpH-vGLQJv-s",
       authDomain: "eywallahsimulator.firebaseapp.com",
@@ -62,116 +131,297 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
+    const googleProvider = new GoogleAuthProvider();
 
     let currentUser = null;
     let gameData = { money: 500, age: 15, stress: 20 };
+    let currentEvent = null; // Aktif olayı tutmak için
 
-    // LOGIN
-    async function login() {
-      const email = document.getElementById("email").value;
-      const pass = document.getElementById("password").value;
+    const loginMsgElement = document.getElementById("loginMsg");
+    const loginPopupOverlay = document.getElementById("loginPopupOverlay");
+    const emailInput = document.getElementById("email");
+    const passwordInput = document.getElementById("password");
+
+    // --- Firebase Authentication Fonksiyonları ---
+
+    async function handleAuthError(err) {
+      console.error("Auth Error:", err);
+      let message = "Bir hata oluştu.";
+      if (err.code === "auth/email-already-in-use") {
+        message = "Bu e-posta adresi zaten kayıtlı.";
+      } else if (err.code === "auth/invalid-email") {
+        message = "Geçersiz e-posta adresi.";
+      } else if (err.code === "auth/weak-password") {
+        message = "Parola en az 6 karakter olmalı.";
+      } else if (err.code === "auth/user-not-found" || err.code === "auth/wrong-password") {
+        message = "E-posta veya parola hatalı.";
+      }
+      loginMsgElement.innerText = message;
+    }
+
+    // E-posta ile Giriş
+    async function loginWithEmail() {
+      const email = emailInput.value;
+      const pass = passwordInput.value;
       try {
-        const user = await signInWithEmailAndPassword(auth, email, pass);
-        currentUser = user.user;
+        await signInWithEmailAndPassword(auth, email, pass);
+        // onAuthStateChanged tetiklenecek ve oyunu başlatacak
+      } catch (err) {
+        handleAuthError(err);
+      }
+    }
+
+    // E-posta ile Kayıt Ol
+    async function registerWithEmail() {
+      const email = emailInput.value;
+      const pass = passwordInput.value;
+      try {
+        await createUserWithEmailAndPassword(auth, email, pass);
+        // onAuthStateChanged tetiklenecek ve oyunu başlatacak
+      } catch (err) {
+        handleAuthError(err);
+      }
+    }
+
+    // Google ile Giriş
+    async function signInWithGoogle() {
+      try {
+        await signInWithPopup(auth, googleProvider);
+        // onAuthStateChanged tetiklenecek ve oyunu başlatacak
+      } catch (err) {
+        handleAuthError(err);
+      }
+    }
+
+    // Anonim Giriş
+    async function signInAsAnonymous() {
+      try {
+        await signInAnonymously(auth);
+        // onAuthStateChanged tetiklenecek ve oyunu başlatacak
+      } catch (err) {
+        handleAuthError(err);
+      }
+    }
+
+    // Kullanıcı Durumu Kontrolü
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        currentUser = user;
+        loginMsgElement.innerText = `Hoşgeldin, ${user.isAnonymous ? "Anonim Kullanıcı" : user.email || user.displayName || user.uid}!`;
+        hideLoginPopup(); // Giriş başarılıysa popup'ı kapat
         await loadGameData();
         startGame();
-      } catch (err) {
-        document.getElementById("loginMsg").innerText = "Hata: " + err.message;
+      } else {
+        currentUser = null;
+        loginMsgElement.innerText = "";
+        showLoginPopup(); // Kullanıcı yoksa popup'ı göster
+        // Oyun ekranını gizle (eğer açıksa)
+        document.getElementById("gameScreen").style.display = "none";
+        // HUD'ı sıfırla veya varsayılan değerleri göster
+        document.getElementById("money").innerText = 500;
+        document.getElementById("age").innerText = 15;
+        document.getElementById("stress").innerText = 20;
       }
-    }
+    });
 
-    // REGISTER
-    async function register() {
-      const email = document.getElementById("email").value;
-      const pass = document.getElementById("password").value;
-      try {
-        const user = await createUserWithEmailAndPassword(auth, email, pass);
-        currentUser = user.user;
-        await saveGameData();
-        startGame();
-      } catch (err) {
-        document.getElementById("loginMsg").innerText = "Hata: " + err.message;
-      }
-    }
+    // --- Oyun Verisi Yönetimi ---
 
-    // SAVE DATA
+    // Veri Kaydetme
     async function saveGameData() {
-      if (!currentUser) return;
-      await setDoc(doc(db, "users", currentUser.uid), gameData);
+      if (!currentUser || currentUser.isAnonymous) {
+        // Anonim kullanıcılar için veri kaydetme desteklenmeyebilir veya farklı işlenebilir
+        // Şu anki kurallar sadece authenticated kullanıcılar için yazılmış.
+        console.warn("Anonim kullanıcılar için veya kullanıcı yokken veri kaydedilemez.");
+        return;
+      }
+      try {
+        await setDoc(doc(db, "users", currentUser.uid), gameData);
+      } catch (error) {
+        console.error("Oyun verisi kaydedilirken hata oluştu:", error);
+      }
     }
 
-    // LOAD DATA
+    // Veri Yükleme
     async function loadGameData() {
       if (!currentUser) return;
+
+      // Anonim kullanıcılar için oyun verisi farklı şekilde yönetilebilir veya ilk kez başlatılabilir
+      if (currentUser.isAnonymous) {
+          gameData = { money: 500, age: 15, stress: 20 }; // Anonim kullanıcı için yeni oyun verisi
+          console.log("Anonim kullanıcı için yeni oyun başlatıldı.");
+          return;
+      }
+
       const ref = doc(db, "users", currentUser.uid);
-      const snap = await getDoc(ref);
-      if (snap.exists()) gameData = snap.data();
+      try {
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+          gameData = snap.data();
+          console.log("Kayıtlı oyun verisi yüklendi:", gameData);
+        } else {
+          gameData = { money: 500, age: 15, stress: 20 }; // Yeni kullanıcı için varsayılan
+          await saveGameData(); // Yeni veriyi kaydet
+          console.log("Yeni kullanıcı için varsayılan oyun verisi oluşturuldu ve kaydedildi.");
+        }
+      } catch (error) {
+        console.error("Oyun verisi yüklenirken hata oluştu:", error);
+        gameData = { money: 500, age: 15, stress: 20 }; // Hata durumunda varsayılan değerler
+      }
     }
 
+    // --- Oyun Mekanikleri ---
+
     function startGame() {
-      document.getElementById("loginScreen").style.display = "none";
       document.getElementById("gameScreen").style.display = "block";
       updateHUD();
       initScene();
-      setInterval(randomEvent, 15000);
+      // Önceki interval'ı temizle, tekrar başlamaması için
+      if (window.eventInterval) clearInterval(window.eventInterval);
+      window.eventInterval = setInterval(randomEvent, 15000); // 15 saniyede bir olay
     }
 
     function updateHUD() {
       document.getElementById("money").innerText = gameData.money;
       document.getElementById("age").innerText = gameData.age;
       document.getElementById("stress").innerText = gameData.stress;
-      saveGameData();
+      saveGameData(); // Her HUD güncellemesinde veriyi kaydet
     }
 
     // RANDOM EVENTS
+    const events = [
+      {
+        text: "Arkadaşın sinemaya çağırdı",
+        opt1Text: "Git (Mutluluk +)", opt1Effect: () => { gameData.stress -= 10; },
+        opt2Text: "Gitme (Para +)", opt2Effect: () => { gameData.money += 50; }
+      },
+      {
+        text: "Kumar fırsatı! (20+ yaş için)",
+        opt1Text: "Oyna (Riskli)", opt1Effect: () => {
+          if (Math.random() > 0.5) { gameData.money += 200; loginMsgElement.innerText = "Kumar kazandın!"; }
+          else { gameData.money -= 100; gameData.stress += 15; loginMsgElement.innerText = "Kumar kaybettin!"; }
+        },
+        opt2Text: "Reddet (Güvenli)", opt2Effect: () => { gameData.stress -= 5; loginMsgElement.innerText = "Kafan rahat."; },
+        condition: () => gameData.age >= 20
+      },
+      {
+        text: "Ev fiyatları arttı, satacak mısın?",
+        opt1Text: "Sat (Para +)", opt1Effect: () => { gameData.money += 1000; },
+        opt2Text: "Bekle (Risk)", opt2Effect: () => { gameData.stress += 5; }
+      },
+      {
+        text: "Yeni bir iş teklifi geldi!",
+        opt1Text: "Kabul Et (Para++, Stres+)", opt1Effect: () => { gameData.money += 500; gameData.stress += 10; },
+        opt2Text: "Reddet (Para--, Stres-)", opt2Effect: () => { gameData.money -= 100; gameData.stress -= 5; }
+      }
+    ];
+
     function randomEvent() {
-      const events = [
-        { text: "Arkadaşın sinemaya çağırdı", opt1: "Git (Mutluluk +)", opt2: "Gitme (Stres -)" },
-        { text: "Kumar fırsatı! (20+ yaş için)", opt1: "Oyna (Riskli)", opt2: "Reddet (Güvenli)" },
-        { text: "Ev fiyatları arttı, satacak mısın?", opt1: "Sat (Para +)", opt2: "Bekle (Risk)" }
-      ];
-      let e = events[Math.floor(Math.random() * events.length)];
-      if (e.text.includes("Kumar") && gameData.age < 20) return;
-      document.getElementById("eventBox").style.display = "block";
-      document.getElementById("eventText").innerText = e.text;
-      document.querySelectorAll("#eventBox button")[0].innerText = e.opt1;
-      document.querySelectorAll("#eventBox button")[1].innerText = e.opt2;
+      // Sadece condition'ı karşılayan olayları filtrele
+      const availableEvents = events.filter(e => !e.condition || e.condition());
+      if (availableEvents.length === 0) return; // Uygun olay yoksa geri dön
+
+      currentEvent = availableEvents[Math.floor(Math.random() * availableEvents.length)];
+      document.getElementById("eventBox").style.display = "flex";
+      document.getElementById("eventText").innerText = currentEvent.text;
+      document.getElementById("option1Button").innerText = currentEvent.opt1Text;
+      document.getElementById("option2Button").innerText = currentEvent.opt2Text;
     }
 
-    function chooseOption(opt) {
-      if (opt === 1) gameData.money += 100;
-      else gameData.stress -= 5;
+    function chooseOption(optNum) {
+      if (!currentEvent) return; // Olay yoksa bir şey yapma
+
+      if (optNum === 1) {
+        currentEvent.opt1Effect();
+      } else if (optNum === 2) {
+        currentEvent.opt2Effect();
+      }
+      currentEvent = null; // Olayı sıfırla
       document.getElementById("eventBox").style.display = "none";
-      updateHUD();
+      updateHUD(); // HUD'ı ve veriyi güncelle
     }
 
-    // SIMPLE THREE.JS MAP
+    // --- Three.js Sahne Oluşturma ---
+    let camera, scene, renderer;
+    let cubes = [];
+
     function initScene() {
       const canvas = document.getElementById("gameCanvas");
-      const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-      const renderer = new THREE.WebGLRenderer({ canvas });
-      renderer.setSize(window.innerWidth, window.innerHeight);
+      if (!renderer) { // Sadece bir kere başlat
+          scene = new THREE.Scene();
+          camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+          renderer = new THREE.WebGLRenderer({ canvas });
+          renderer.setSize(window.innerWidth, window.innerHeight);
 
-      const light = new THREE.DirectionalLight(0xffffff, 1);
-      light.position.set(5, 10, 5).normalize();
-      scene.add(light);
+          // Işıklandırma
+          const ambientLight = new THREE.AmbientLight(0x404040, 2); // Yumuşak ortam ışığı
+          scene.add(ambientLight);
+          const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+          directionalLight.position.set(5, 10, 5).normalize();
+          scene.add(directionalLight);
 
-      for (let i=0;i<30;i++){
-        const geometry = new THREE.BoxGeometry(1, Math.random()*3+1, 1);
-        const material = new THREE.MeshStandardMaterial({ color: Math.random()*0xffffff });
-        const cube = new THREE.Mesh(geometry, material);
-        cube.position.set(Math.random()*40-20, cube.geometry.parameters.height/2, Math.random()*40-20);
-        scene.add(cube);
+          // Rastgele binalar
+          for (let i = 0; i < 50; i++) {
+              const geometry = new THREE.BoxGeometry(2, Math.random() * 10 + 2, 2);
+              const material = new THREE.MeshStandardMaterial({ color: Math.random() * 0xffffff });
+              const cube = new THREE.Mesh(geometry, material);
+              cube.position.set(Math.random() * 60 - 30, cube.geometry.parameters.height / 2, Math.random() * 60 - 30);
+              cubes.push(cube);
+              scene.add(cube);
+          }
+
+          // Kamera pozisyonu
+          camera.position.set(25, 15, 25);
+          camera.lookAt(0, 0, 0);
+
+          // Animasyon döngüsü
+          function animate() {
+              requestAnimationFrame(animate);
+              // Küpleri döndür
+              cubes.forEach(cube => {
+                  cube.rotation.y += 0.001;
+              });
+              renderer.render(scene, camera);
+          }
+          animate();
+
+          // Pencere boyutu değiştiğinde responsiflik
+          window.addEventListener('resize', () => {
+              camera.aspect = window.innerWidth / window.innerHeight;
+              camera.updateProjectionMatrix();
+              renderer.setSize(window.innerWidth, window.innerHeight);
+          });
       }
-
-      camera.position.z = 25;
-      camera.position.y = 15;
-      camera.lookAt(0,0,0);
-
-      function animate() { requestAnimationFrame(animate); renderer.render(scene, camera); }
-      animate();
     }
+
+    // --- Popup Yönetimi ---
+    function showLoginPopup() {
+        loginPopupOverlay.classList.add('active');
+    }
+
+    function hideLoginPopup() {
+        loginPopupOverlay.classList.remove('active');
+        loginMsgElement.innerText = ""; // Mesajı temizle
+        emailInput.value = ""; // Formu temizle
+        passwordInput.value = "";
+    }
+
+    // --- DOM Yüklendiğinde Olay Dinleyicilerini Ata ---
+    document.addEventListener('DOMContentLoaded', () => {
+        // Auth butonları
+        document.getElementById('loginButton').addEventListener('click', loginWithEmail);
+        document.getElementById('registerButton').addEventListener('click', registerWithEmail);
+        document.getElementById('signInWithGoogle').addEventListener('click', signInWithGoogle);
+        document.getElementById('signInAnonymously').addEventListener('click', signInAsAnonymous);
+
+        // Oyun içi butonlar
+        document.getElementById('option1Button').addEventListener('click', () => chooseOption(1));
+        document.getElementById('option2Button').addEventListener('click', () => chooseOption(2));
+
+        // Oyun ekranından giriş popup'ını açacak buton
+        document.getElementById('openLoginPopupBtn').addEventListener('click', showLoginPopup);
+
+        // onAuthStateChanged fonksiyonu ilk yüklemede kullanıcıyı kontrol edecek ve popup'ı yönetecek.
+    });
   </script>
 </body>
 </html>

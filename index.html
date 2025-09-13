@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eywallah Mini Hayat Simi Online</title>
+<style>
+  body { font-family: Arial, sans-serif; background:#111; color:#eee; text-align:center; }
+  .stat-box { border:1px solid #444; padding:10px; margin:10px; display:inline-block; width:200px; }
+  button { padding:8px 12px; margin:5px; cursor:pointer; background:#0f0; border:none; color:#000; font-weight:bold; }
+  #market, #investment { margin-top:20px; }
+</style>
+</head>
+<body>
+<h1>Eywallah Mini Hayat Simi Online</h1>
+
+<div class="stat-box">
+  <p>Para: $<span id="money">0</span></p>
+  <p>Enerji: <span id="energy">0</span></p>
+  <p>Mutluluk: <span id="happiness">0</span></p>
+</div>
+
+<div id="actions">
+  <button onclick="actionWrapper(work)">İş Yap (+$100, -20 Enerji)</button>
+  <button onclick="actionWrapper(rest)">Dinlen (+30 Enerji, -$10)</button>
+  <button onclick="actionWrapper(fun)">Eğlen (+20 Mutluluk, -$10)</button>
+</div>
+
+<div id="market">
+  <h2>Araba Marketi</h2>
+  <p>Araba Fiyatı: $<span id="carPrice">0</span></p>
+  <button onclick="actionWrapper(buyCar)">Araç Satın Al</button>
+  <button onclick="actionWrapper(sellCar)">Araç Sat</button>
+  <p>Arabaların: <span id="cars">0</span></p>
+</div>
+
+<div id="investment">
+  <h2>Yatırım</h2>
+  <p>Hisse Fiyatı: $<span id="stockPrice">0</span></p>
+  <button onclick="actionWrapper(buyStock)">Hisse Al</button>
+  <button onclick="actionWrapper(sellStock)">Hisse Sat</button>
+  <p>Hisselerin: <span id="stocks">0</span></p>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<script>
+// Firebase config
+firebase.initializeApp({
+  apiKey: "AIzaSyDdkE1j3ClDiNwZLobg09MRpH-vGLQJv-s",
+  authDomain: "eywallahsimulator.firebaseapp.com",
+  projectId: "eywallahsimulator",
+  storageBucket: "eywallahsimulator.firebasestorage.app",
+  messagingSenderId: "734785567506",
+  appId: "1:734785567506:web:1ebdba4ac2e37b907991cb",
+  measurementId: "G-86GQX5G1S3"
+});
+
+const db = firebase.firestore();
+let userId;
+
+// Oyuncu verileri
+let money = 500, energy = 100, happiness = 100, cars = 0, carPrice = 300, stocks = 0, stockPrice = 50;
+
+// UI Güncelle
+function updateUI(){
+  document.getElementById('money').innerText = money;
+  document.getElementById('energy').innerText = energy;
+  document.getElementById('happiness').innerText = happiness;
+  document.getElementById('cars').innerText = cars;
+  document.getElementById('carPrice').innerText = carPrice;
+  document.getElementById('stocks').innerText = stocks;
+  document.getElementById('stockPrice').innerText = stockPrice;
+}
+
+// Firestore’dan veri çek / oluştur
+async function loadUser() {
+  const docRef = db.collection("users").doc(userId);
+  const doc = await docRef.get();
+  if(doc.exists){
+    const data = doc.data();
+    money = data.money;
+    energy = data.energy;
+    happiness = data.happiness;
+    cars = data.cars;
+    stocks = data.stocks;
+    carPrice = data.carPrice;
+    stockPrice = data.stockPrice;
+  } else {
+    await docRef.set({money, energy, happiness, cars, stocks, carPrice, stockPrice});
+  }
+  updateUI();
+}
+
+// Firestore’a kaydet
+async function saveUser() {
+  await db.collection("users").doc(userId).set({money, energy, happiness, cars, stocks, carPrice, stockPrice});
+}
+
+// Her aksiyon sonrası kaydet
+function actionWrapper(fn){ fn(); saveUser(); }
+
+// İş / Dinlen / Eğlen
+function work(){ if(energy>=20){ money+=100; energy-=20; updateUI(); alert("İşten $100 kazandın!"); } else alert("Enerjin yetmiyor!"); }
+function rest(){ if(money>=10){ energy+=30; money-=10; updateUI(); alert("Dinlendin!"); } else alert("Paran yetmiyor!"); }
+function fun(){ if(money>=10){ happiness+=20; money-=10; updateUI(); alert("Eğlendin!"); } else alert("Paran yetmiyor!"); }
+
+// Araba Marketi
+function buyCar(){ if(money>=carPrice){ money-=carPrice; cars+=1; updateUI(); alert("Araba aldın!"); } else alert("Paran yetmiyor!"); }
+function sellCar(){ if(cars>0){ money+=carPrice; cars-=1; updateUI(); alert("Araba sattın!"); } else alert("Araban yok!"); }
+
+// Hisse
+function buyStock(){ if(money>=stockPrice){ money-=stockPrice; stocks+=1; updateUI(); alert("Hisse aldın!"); } else alert("Paran yetmiyor!"); }
+function sellStock(){ if(stocks>0){ money+=stockPrice; stocks-=1; updateUI(); alert("Hisse sattın!"); } else alert("Hissen yok!"); }
+
+// Piyasa simülasyonu
+setInterval(()=>{
+  carPrice += Math.floor(Math.random()*21 - 10); if(carPrice<50) carPrice=50;
+  stockPrice += Math.floor(Math.random()*6 -3); if(stockPrice<5) stockPrice=5;
+  updateUI(); saveUser();
+},5000);
+
+// Oturum açma
+firebase.auth().onAuthStateChanged((user)=>{
+  if(user){ userId=user.uid; loadUser(); }
+  else{
+    const provider = new firebase.auth.GoogleAuthProvider();
+    firebase.auth().signInWithPopup(provider)
+      .then(result=>{ userId=result.user.uid; loadUser(); })
+      .catch(err=>console.error("Giriş başarısız:",err));
+  }
+});
+</script>
+</body>
+</html>

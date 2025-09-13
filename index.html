@@ -1,138 +1,189 @@
-<!DOCTYPE html>
-<html lang="tr">
+<!doctype html>
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Eywallah Mini Hayat Simi Online</title>
-<style>
-  body { font-family: Arial, sans-serif; background:#111; color:#eee; text-align:center; }
-  .stat-box { border:1px solid #444; padding:10px; margin:10px; display:inline-block; width:200px; }
-  button { padding:8px 12px; margin:5px; cursor:pointer; background:#0f0; border:none; color:#000; font-weight:bold; }
-  #market, #investment { margin-top:20px; }
-</style>
+  <meta charset="utf-8" />
+  <title>Eywallah Sim - Prototip</title>
+  <style>
+    :root{--bg:#0f1720;--card:#111827;--accent:#00e68a;--muted:#93a3b1;color-scheme:dark}
+    body{background:var(--bg);color:#e6eef4;font-family:Inter,Segoe UI,Arial;margin:0;padding:16px}
+    .row{display:flex;gap:12px}
+    .card{background:var(--card);padding:12px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,0.6)}
+    .stats{min-width:220px}
+    .bar{height:10px;background:#1f2937;border-radius:6px;margin-top:6px;overflow:hidden}
+    .bar > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#14b07a)}
+    button{background:transparent;color:var(--accent);border:1px solid #20303a;padding:8px 10px;border-radius:8px;cursor:pointer}
+    .market{width:380px}
+    .item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #0f2a22}
+  </style>
 </head>
 <body>
-<h1>Eywallah Mini Hayat Simi Online</h1>
+  <h1>Eywallah Sim — Prototip</h1>
 
-<div class="stat-box">
-  <p>Para: $<span id="money">0</span></p>
-  <p>Enerji: <span id="energy">0</span></p>
-  <p>Mutluluk: <span id="happiness">0</span></p>
-</div>
+  <div class="row">
+    <div class="card stats">
+      <strong>Karakter</strong>
+      <div id="name">İsim: -</div>
+      <div id="age">Yaş: -</div>
+      <div id="day">Gün: 0</div>
 
-<div id="actions">
-  <button onclick="actionWrapper(work)">İş Yap (+$100, -20 Enerji)</button>
-  <button onclick="actionWrapper(rest)">Dinlen (+30 Enerji, -$10)</button>
-  <button onclick="actionWrapper(fun)">Eğlen (+20 Mutluluk, -$10)</button>
-</div>
+      <div style="margin-top:8px"><strong>Para:</strong> $<span id="money">0</span></div>
+      <div style="margin-top:8px"><strong>Sağlık</strong>
+        <div class="bar"><i id="healthBar" style="width:60%"></i></div>
+      </div>
+      <div style="margin-top:8px"><strong>Stres</strong>
+        <div class="bar"><i id="stressBar" style="width:30%"></i></div>
+      </div>
 
-<div id="market">
-  <h2>Araba Marketi</h2>
-  <p>Araba Fiyatı: $<span id="carPrice">0</span></p>
-  <button onclick="actionWrapper(buyCar)">Araç Satın Al</button>
-  <button onclick="actionWrapper(sellCar)">Araç Sat</button>
-  <p>Arabaların: <span id="cars">0</span></p>
-</div>
+      <div style="margin-top:12px">
+        <button id="tickBtn">Gün Geçir</button>
+        <button id="saveBtn">Kaydet</button>
+        <button id="loadBtn">Yükle</button>
+      </div>
+    </div>
 
-<div id="investment">
-  <h2>Yatırım</h2>
-  <p>Hisse Fiyatı: $<span id="stockPrice">0</span></p>
-  <button onclick="actionWrapper(buyStock)">Hisse Al</button>
-  <button onclick="actionWrapper(sellStock)">Hisse Sat</button>
-  <p>Hisselerin: <span id="stocks">0</span></p>
-</div>
+    <div class="card market">
+      <strong>Piyasa</strong>
+      <div id="marketList"></div>
+      <hr />
+      <strong>Envanter</strong>
+      <div id="inventory"></div>
+    </div>
+  </div>
 
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script>
+    // --- Başlangıç verisi ---
+    const defaultState = {
+      name: "Eywallah",
+      age: 18,
+      day: 1,
+      money: 300,
+      health: 80,
+      stress: 10,
+      inventory: {},
+      market: [
+        {id:"bread", name:"Ekmek", price:5, volatility:0.08, minPrice:1},
+        {id:"phone", name:"Telefon", price:400, volatility:0.06, minPrice:50},
+        {id:"laptop", name:"Laptop", price:900, volatility:0.04, minPrice:200},
+        {id:"stockA", name:"Hisse A", price:120, volatility:0.12, minPrice:10},
+        {id:"tokenX", name:"Token X", price:10, volatility:0.35, minPrice:1}
+      ]
+    };
 
-<script>
-// Firebase config
-firebase.initializeApp({
-  apiKey: "AIzaSyDdkE1j3ClDiNwZLobg09MRpH-vGLQJv-s",
-  authDomain: "eywallahsimulator.firebaseapp.com",
-  projectId: "eywallahsimulator",
-  storageBucket: "eywallahsimulator.firebasestorage.app",
-  messagingSenderId: "734785567506",
-  appId: "1:734785567506:web:1ebdba4ac2e37b907991cb",
-  measurementId: "G-86GQX5G1S3"
-});
+    let state = load() || JSON.parse(JSON.stringify(defaultState));
 
-const db = firebase.firestore();
-let userId;
+    // --- Render ---
+    function render(){
+      document.getElementById('name').textContent = "İsim: " + state.name;
+      document.getElementById('age').textContent = "Yaş: " + state.age;
+      document.getElementById('day').textContent = "Gün: " + state.day;
+      document.getElementById('money').textContent = Math.round(state.money);
 
-// Oyuncu verileri
-let money = 500, energy = 100, happiness = 100, cars = 0, carPrice = 300, stocks = 0, stockPrice = 50;
+      document.getElementById('healthBar').style.width = Math.max(0, Math.min(100, state.health)) + "%";
+      document.getElementById('stressBar').style.width = Math.max(0, Math.min(100, state.stress)) + "%";
 
-// UI Güncelle
-function updateUI(){
-  document.getElementById('money').innerText = money;
-  document.getElementById('energy').innerText = energy;
-  document.getElementById('happiness').innerText = happiness;
-  document.getElementById('cars').innerText = cars;
-  document.getElementById('carPrice').innerText = carPrice;
-  document.getElementById('stocks').innerText = stocks;
-  document.getElementById('stockPrice').innerText = stockPrice;
-}
+      // market
+      const ml = document.getElementById('marketList'); ml.innerHTML = "";
+      state.market.forEach(it=>{
+        const div = document.createElement('div'); div.className='item';
+        div.innerHTML = `<div><strong>${it.name}</strong><div style="font-size:12px;color:var(--muted)">$${it.price.toFixed(2)}</div></div>
+          <div>
+            <button onclick="buy('${it.id}')">Al</button>
+            <button onclick="sell('${it.id}')">Sat</button>
+          </div>`;
+        ml.appendChild(div);
+      });
 
-// Firestore’dan veri çek / oluştur
-async function loadUser() {
-  const docRef = db.collection("users").doc(userId);
-  const doc = await docRef.get();
-  if(doc.exists){
-    const data = doc.data();
-    money = data.money;
-    energy = data.energy;
-    happiness = data.happiness;
-    cars = data.cars;
-    stocks = data.stocks;
-    carPrice = data.carPrice;
-    stockPrice = data.stockPrice;
-  } else {
-    await docRef.set({money, energy, happiness, cars, stocks, carPrice, stockPrice});
-  }
-  updateUI();
-}
+      // inventory
+      const inv = document.getElementById('inventory'); inv.innerHTML = "";
+      const keys = Object.keys(state.inventory);
+      if(keys.length===0) inv.textContent = "Boş";
+      else keys.forEach(k=>{
+        inv.innerHTML += `<div>${k}: ${state.inventory[k]}</div>`;
+      });
+    }
 
-// Firestore’a kaydet
-async function saveUser() {
-  await db.collection("users").doc(userId).set({money, energy, happiness, cars, stocks, carPrice, stockPrice});
-}
+    // --- Piyasa güncelleme ---
+    function updateMarketPrices(){
+      state.market.forEach(it=>{
+        // random walk
+        const change = (Math.random() - 0.48) * it.volatility * 2; // yön ve büyüklük
+        let newPrice = it.price * (1 + change);
+        if(newPrice < it.minPrice) newPrice = it.minPrice + Math.random()*2;
+        it.price = Math.round(newPrice * 100)/100;
+      });
+    }
 
-// Her aksiyon sonrası kaydet
-function actionWrapper(fn){ fn(); saveUser(); }
+    // --- Al / Sat ---
+    function buy(id){
+      const item = state.market.find(x=>x.id===id);
+      if(!item) return;
+      if(state.money < item.price){ alert("Paran yetmiyor kk"); return; }
+      state.money -= item.price;
+      state.inventory[id] = (state.inventory[id]||0) + 1;
+      save();
+      render();
+    }
 
-// İş / Dinlen / Eğlen
-function work(){ if(energy>=20){ money+=100; energy-=20; updateUI(); alert("İşten $100 kazandın!"); } else alert("Enerjin yetmiyor!"); }
-function rest(){ if(money>=10){ energy+=30; money-=10; updateUI(); alert("Dinlendin!"); } else alert("Paran yetmiyor!"); }
-function fun(){ if(money>=10){ happiness+=20; money-=10; updateUI(); alert("Eğlendin!"); } else alert("Paran yetmiyor!"); }
+    function sell(id){
+      if(!state.inventory[id] || state.inventory[id] <=0){ alert("Envanterinde yok"); return; }
+      const item = state.market.find(x=>x.id===id);
+      const sellPrice = item.price * 0.9; // komisyon
+      state.inventory[id] -= 1;
+      state.money += sellPrice;
+      save(); render();
+    }
 
-// Araba Marketi
-function buyCar(){ if(money>=carPrice){ money-=carPrice; cars+=1; updateUI(); alert("Araba aldın!"); } else alert("Paran yetmiyor!"); }
-function sellCar(){ if(cars>0){ money+=carPrice; cars-=1; updateUI(); alert("Araba sattın!"); } else alert("Araban yok!"); }
+    // --- Gün tick ---
+    function tickDay(){
+      state.day += 1;
+      // her 365 gün yaş ++
+      if(state.day % 365 === 0) state.age += 1;
+      // market değişir
+      updateMarketPrices();
+      // rastgele olay: %30 chance
+      if(Math.random() < 0.30) triggerRandomEvent();
+      // zamanla sağlık/stres değişimi
+      state.health = Math.max(0, Math.min(100, state.health - 0.2 + (Math.random()-0.4)*1 ));
+      state.stress = Math.max(0, Math.min(100, state.stress + (Math.random()*2 - 0.6) ));
+      // küçük pasif gelir (ör. iş)
+      state.money += 5;
+      save(); render();
+    }
 
-// Hisse
-function buyStock(){ if(money>=stockPrice){ money-=stockPrice; stocks+=1; updateUI(); alert("Hisse aldın!"); } else alert("Paran yetmiyor!"); }
-function sellStock(){ if(stocks>0){ money+=stockPrice; stocks-=1; updateUI(); alert("Hisse sattın!"); } else alert("Hissen yok!"); }
+    // --- Olay sistemi (basit) ---
+    const events = [
+      {id:"sick", title:"Hafif hastalandın", choices:[
+        {t:"Doktora git (-$50, +health10, -stress20)", do(){ state.money-=50; state.health+=10; state.stress-=20 }},
+        {t:"Evde dinlen (+energy5)", do(){ state.health+=5; state.stress-=5 }},
+        {t:"Çalışmaya devam (-health5, +money20)", do(){ state.health-=5; state.money+=20 }}
+      ]},
+      {id:"phone_break", title:"Telefonun bozuldu", choices:[
+        {t:"Tamir et -$100", do(){ state.money-=100; }},
+        {t:"Yeni al -$400", do(){ state.money-=400; state.inventory['phone']= (state.inventory['phone']||0)+1 }},
+        {t:"Eskiyle devam", do(){ state.stress+=5 }}
+      ]}
+    ];
 
-// Piyasa simülasyonu
-setInterval(()=>{
-  carPrice += Math.floor(Math.random()*21 - 10); if(carPrice<50) carPrice=50;
-  stockPrice += Math.floor(Math.random()*6 -3); if(stockPrice<5) stockPrice=5;
-  updateUI(); saveUser();
-},5000);
+    function triggerRandomEvent(){
+      const e = events[Math.floor(Math.random()*events.length)];
+      const choiceText = e.choices.map((c,i)=> (i+1)+". "+c.t).join("\n");
+      const sel = prompt(`Olay: ${e.title}\nSeçenekler:\n${choiceText}\nSeçim numarası gir (1-${e.choices.length})`);
+      const idx = parseInt(sel) - 1;
+      if(!isNaN(idx) && e.choices[idx]) e.choices[idx].do();
+      else { /* geç */ }
+    }
 
-// Oturum açma
-firebase.auth().onAuthStateChanged((user)=>{
-  if(user){ userId=user.uid; loadUser(); }
-  else{
-    const provider = new firebase.auth.GoogleAuthProvider();
-    firebase.auth().signInWithPopup(provider)
-      .then(result=>{ userId=result.user.uid; loadUser(); })
-      .catch(err=>console.error("Giriş başarısız:",err));
-  }
-});
-</script>
+    // --- Kaydet / yükle ---
+    function save(){ localStorage.setItem('eywallahSimSave', JSON.stringify(state)); }
+    function load(){ try{ const s = localStorage.getItem('eywallahSimSave'); return s?JSON.parse(s):null }catch(e){return null} }
+
+    // Buton bağlama
+    document.getElementById('tickBtn').onclick = tickDay;
+    document.getElementById('saveBtn').onclick = ()=>{ save(); alert("Kaydedildi kk") };
+    document.getElementById('loadBtn').onclick = ()=>{ state = load()||state; render(); alert("Yüklendi") };
+
+    // ilk render
+    render();
+  </script>
 </body>
 </html>

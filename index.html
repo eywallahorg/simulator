@@ -4,26 +4,27 @@
   <meta charset="UTF-8">
   <title>Eywallah Sim</title>
   <style>
-    body { margin: 0; font-family: Arial, sans-serif; background: #111; color: white; overflow: hidden; }
+    body { margin: 0; font-family: Arial, sans-serif; background: #111; color: white; }
     #loginScreen, #gameScreen { display: none; }
     #loginScreen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
     input { margin: 5px; padding: 10px; width: 200px; }
-    button { padding: 10px 20px; cursor: pointer; }
-    #hud { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 8px; z-index: 10; }
-    #eventBox { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); padding: 15px; border-radius: 10px; display: none; z-index: 10; }
+    button { padding: 10px 20px; cursor: pointer; margin: 5px; }
+    #hud { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 8px; }
+    #eventBox { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); padding: 15px; border-radius: 10px; display: none; }
     canvas { display: block; }
   </style>
 </head>
 <body>
-
   <!-- Login Screen -->
   <div id="loginScreen">
     <h1>Eywallah Sim 🔑</h1>
     <input type="email" id="email" placeholder="Email">
     <input type="password" id="password" placeholder="Şifre">
-    <button onclick="login()">Giriş Yap</button>
-    <button onclick="register()">Kayıt Ol</button>
-    <p id="loginMsg"></p>
+    <div>
+      <button onclick="login()">Giriş Yap</button>
+      <button onclick="register()">Kayıt Ol</button>
+    </div>
+    <p id="loginMsg" style="color: yellow;"></p>
   </div>
 
   <!-- Game Screen -->
@@ -47,14 +48,15 @@
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
     import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    // Firebase Config
+    // Firebase Config (GitHub Pages ile uyumlu)
     const firebaseConfig = {
       apiKey: "AIzaSyDdkE1j3ClDiNwZLobg09MRpH-vGLQJv-s",
       authDomain: "eywallahsimulator.firebaseapp.com",
       projectId: "eywallahsimulator",
       storageBucket: "eywallahsimulator.appspot.com",
       messagingSenderId: "734785567506",
-      appId: "1:734785567506:web:1ebdba4ac2e37b907991cb"
+      appId: "1:734785567506:web:1ebdba4ac2e37b907991cb",
+      measurementId: "G-86GQX5G1S3"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -64,7 +66,7 @@
     let currentUser = null;
     let gameData = { money: 500, age: 15, stress: 20 };
 
-    // Login/Register
+    // LOGIN
     async function login() {
       const email = document.getElementById("email").value;
       const pass = document.getElementById("password").value;
@@ -73,11 +75,12 @@
         currentUser = user.user;
         await loadGameData();
         startGame();
-      } catch(e) {
-        document.getElementById("loginMsg").innerText = "Hata: " + e.message;
+      } catch (err) {
+        document.getElementById("loginMsg").innerText = "Hata: " + err.message;
       }
     }
 
+    // REGISTER
     async function register() {
       const email = document.getElementById("email").value;
       const pass = document.getElementById("password").value;
@@ -86,16 +89,18 @@
         currentUser = user.user;
         await saveGameData();
         startGame();
-      } catch(e) {
-        document.getElementById("loginMsg").innerText = "Hata: " + e.message;
+      } catch (err) {
+        document.getElementById("loginMsg").innerText = "Hata: " + err.message;
       }
     }
 
+    // SAVE DATA
     async function saveGameData() {
       if (!currentUser) return;
       await setDoc(doc(db, "users", currentUser.uid), gameData);
     }
 
+    // LOAD DATA
     async function loadGameData() {
       if (!currentUser) return;
       const ref = doc(db, "users", currentUser.uid);
@@ -118,14 +123,14 @@
       saveGameData();
     }
 
-    // Random Event
+    // RANDOM EVENTS
     function randomEvent() {
-      let events = [
-        { text: "Arkadaşın sinemaya çağırdı", opt1: "Git (+Mutluluk)", opt2: "Gitme (-Stres)" },
-        { text: "Kumar fırsatı! (20+ yaş)", opt1: "Oyna (Riskli)", opt2: "Reddet (Güvenli)" },
-        { text: "Ev fiyatları arttı, satacak mısın?", opt1: "Sat (+Para)", opt2: "Bekle (Risk)" }
+      const events = [
+        { text: "Arkadaşın sinemaya çağırdı", opt1: "Git (Mutluluk +)", opt2: "Gitme (Stres -)" },
+        { text: "Kumar fırsatı! (20+ yaş için)", opt1: "Oyna (Riskli)", opt2: "Reddet (Güvenli)" },
+        { text: "Ev fiyatları arttı, satacak mısın?", opt1: "Sat (Para +)", opt2: "Bekle (Risk)" }
       ];
-      let e = events[Math.floor(Math.random()*events.length)];
+      let e = events[Math.floor(Math.random() * events.length)];
       if (e.text.includes("Kumar") && gameData.age < 20) return;
       document.getElementById("eventBox").style.display = "block";
       document.getElementById("eventText").innerText = e.text;
@@ -140,50 +145,33 @@
       updateHUD();
     }
 
-    // Three.js gerçekçi şehir
+    // SIMPLE THREE.JS MAP
     function initScene() {
       const canvas = document.getElementById("gameCanvas");
       const scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x111111);
-      const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
+      const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
       const renderer = new THREE.WebGLRenderer({ canvas });
       renderer.setSize(window.innerWidth, window.innerHeight);
 
-      // ışık
       const light = new THREE.DirectionalLight(0xffffff, 1);
-      light.position.set(50, 100, 50);
+      light.position.set(5, 10, 5).normalize();
       scene.add(light);
 
-      const ambient = new THREE.AmbientLight(0x404040);
-      scene.add(ambient);
-
-      // Zemin
-      const planeGeo = new THREE.PlaneGeometry(200, 200);
-      const planeMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
-      const plane = new THREE.Mesh(planeGeo, planeMat);
-      plane.rotation.x = -Math.PI/2;
-      scene.add(plane);
-
-      // Şehir blokları (ev/gökdelen/AVM)
-      for(let i=0; i<50; i++){
-        const h = Math.random()*10 + 1;
-        const geo = new THREE.BoxGeometry(4, h, 4);
-        const mat = new THREE.MeshStandardMaterial({ color: Math.random()*0xffffff });
-        const mesh = new THREE.Mesh(geo, mat);
-        mesh.position.set(Math.random()*180-90, h/2, Math.random()*180-90);
-        scene.add(mesh);
+      for (let i=0;i<30;i++){
+        const geometry = new THREE.BoxGeometry(1, Math.random()*3+1, 1);
+        const material = new THREE.MeshStandardMaterial({ color: Math.random()*0xffffff });
+        const cube = new THREE.Mesh(geometry, material);
+        cube.position.set(Math.random()*40-20, cube.geometry.parameters.height/2, Math.random()*40-20);
+        scene.add(cube);
       }
 
-      camera.position.set(0, 50, 60);
+      camera.position.z = 25;
+      camera.position.y = 15;
       camera.lookAt(0,0,0);
 
-      function animate() {
-        requestAnimationFrame(animate);
-        renderer.render(scene, camera);
-      }
+      function animate() { requestAnimationFrame(animate); renderer.render(scene, camera); }
       animate();
     }
-
   </script>
 </body>
 </html>
